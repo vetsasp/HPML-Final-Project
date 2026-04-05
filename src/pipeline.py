@@ -11,6 +11,7 @@ from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass
 
 import numpy as np
+
 from dotenv import load_dotenv
 
 # Add the parent directory to sys.path to allow imports when run directly
@@ -107,8 +108,8 @@ class Pipeline:
         embeddings, embed_time = self.embedder.encode(documents)
         logger.debug(f"Document embedding took {embed_time:.4f}s")
         
-        # Add to index
-        doc_ids, _ = self.retriever.add_embeddings(embeddings, ids)
+        # Add to index (including document texts)
+        doc_ids, _ = self.retriever.add_embeddings(embeddings, ids, documents)
         
         logger.info(f"Added {len(doc_ids)} documents to index")
         return doc_ids
@@ -145,16 +146,16 @@ class Pipeline:
         )
         timings["retrieval"] = search_time
 
-        # Get the actual passages (would need to store passage text mapping)
-        # For now, we'll return empty since we don't have the document text store
-        retrieved_passages = [""] * top_k
-        retrieved_scores = distances[0].tolist()
+        # Get the actual passages using the mapped IDs
+        flat_ids = [id_val for id_val in mapped_ids[0] if id_val != -1]
+        retrieved_passages = self.retriever.get_documents_by_ids(flat_ids)
+        retrieved_scores = distances[0].tolist()[:len(retrieved_passages)]
 
         # Step 3: Generate response
         start = time.perf_counter()
         
         # Format RAG prompt
-        prompt = format_rag_prompt(query, retrieved_passages[:top_k])
+        prompt = format_rag_prompt(query, retrieved_passages)
         
         # Generate
         generated_texts, gen_time = self.generator.generate(
@@ -166,7 +167,7 @@ class Pipeline:
         return RAGResult(
             query=query,
             answer=generated_texts[0] if generated_texts else "",
-            retrieved_passages=retrieved_passages[:top_k],
+            retrieved_passages=retrieved_passages,
             retrieved_scores=retrieved_scores,
             timings=timings,
             metadata={

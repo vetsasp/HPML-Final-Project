@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 

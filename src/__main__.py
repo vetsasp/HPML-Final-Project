@@ -5,13 +5,14 @@ Provides CLI interface for running queries.
 
 import argparse
 import logging
+
+# Add parent directory to path
+import os
 import sys
 from typing import Optional
 
 from dotenv import load_dotenv
 
-# Add parent directory to path
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
@@ -37,27 +38,31 @@ def setup_args() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--top-k", "-k",
+        "--top-k",
+        "-k",
         type=int,
         default=None,
         help="Number of passages to retrieve",
     )
 
     parser.add_argument(
-        "--max-tokens", "-t",
+        "--max-tokens",
+        "-t",
         type=int,
         default=None,
         help="Maximum tokens to generate",
     )
 
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Enable verbose logging",
     )
 
     parser.add_argument(
-        "--add-documents", "-a",
+        "--add-documents",
+        "-a",
         type=str,
         nargs="*",
         help="Add documents to the index before querying",

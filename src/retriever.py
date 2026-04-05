@@ -71,6 +71,7 @@ class Retriever:
 
         # Storage for IDs and metadata
         self.id_map = {}  # Maps FAISS internal IDs to actual IDs
+        self.documents = {}  # Maps actual IDs to document texts
         self.next_id = 0
         self.is_trained = self._needs_training()
 
@@ -116,7 +117,10 @@ class Retriever:
 
     @utils.timing_decorator
     def add_embeddings(
-        self, embeddings: np.ndarray, ids: Optional[List[int]] = None
+        self,
+        embeddings: np.ndarray,
+        ids: Optional[List[int]] = None,
+        documents: Optional[List[str]] = None,
     ) -> List[int]:
         """
         Add embeddings to the FAISS index.
@@ -124,6 +128,7 @@ class Retriever:
         Args:
             embeddings: Numpy array of shape (n, embedding_dim)
             ids: Optional list of IDs for the embeddings
+            documents: Optional list of document texts to store
 
         Returns:
             List of IDs assigned to the embeddings
@@ -148,10 +153,12 @@ class Retriever:
             ids = list(range(self.next_id, self.next_id + len(embeddings)))
             self.next_id += len(embeddings)
 
-        # Store ID mapping
+        # Store ID mapping and documents
         start_idx = self.index.ntotal
         for i, id_val in enumerate(ids):
             self.id_map[start_idx + i] = id_val
+            if documents is not None and i < len(documents):
+                self.documents[id_val] = documents[i]
 
         # Add to index
         logger.debug(f"Adding {len(embeddings)} vectors to index")
@@ -159,6 +166,10 @@ class Retriever:
 
         logger.debug(f"Index now contains {self.index.ntotal} vectors")
         return ids
+
+    def get_documents_by_ids(self, doc_ids: List[int]) -> List[str]:
+        """Retrieve document texts by their IDs."""
+        return [self.documents.get(id_val, "") for id_val in doc_ids]
 
     def search(
         self, query_embeddings: np.ndarray, k: Optional[int] = None

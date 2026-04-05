@@ -19,8 +19,13 @@ class ModelConfig:
     embedding_dimension: int = 384
     max_seq_length: int = 256
 
-    # Language model (vLLM)
-    llm_model_name: str = "mistralai/Mistral-7B-v0.1"
+    # Language model selection
+    # NOTE: I'm using a shit model here for testing, as I
+    # can't run the real model on my machine
+    # Will switch over when on the HPC
+    # llm_model_name: str = "mistralai/Mistral-7B-v0.1"
+    llm_model_name: str = "microsoft/Phi-3-mini-4k-instruct"
+
     llm_max_model_len: int = 2048
     llm_tensor_parallel_size: int = 1
     llm_gpu_memory_utilization: float = 0.8
@@ -37,9 +42,7 @@ class RetrievalConfig:
     """Retrieval configuration settings."""
 
     top_k: int = 5
-    faiss_index_type: str = (
-        "IndexFlatIP"  # Inner product for cosine similarity after L2 norm
-    )
+    faiss_index_type: str = "IndexFlatIP"
     embedding_batch_size: int = 32
 
 
@@ -76,7 +79,7 @@ class DeviceConfig:
             return "mps"
         else:
             return "cpu"
-    
+
     device: str = get_device()
 
     @staticmethod
@@ -111,4 +114,3 @@ if __name__ == "__main__":
     print(f"  LLM model: {config.model.llm_model_name}")
     print(f"  Data dir: {config.paths.data_dir}")
     print(f"  Cache dir: {config.paths.cache_dir}")
-
