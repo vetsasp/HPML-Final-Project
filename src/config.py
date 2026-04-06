@@ -3,11 +3,17 @@ Configuration management for RAG pipeline.
 Handles model selection, paths, and device configuration.
 """
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 import torch
+
+# Set up local model cache directories
+_models_dir = Path(__file__).parent.parent / "models"
+os.environ.setdefault("HF_HOME", str(_models_dir / "hf_cache"))
+os.environ.setdefault("VLLM_HOME", str(_models_dir / "vllm"))
 
 
 @dataclass
@@ -20,11 +26,11 @@ class ModelConfig:
     max_seq_length: int = 256
 
     # Language model selection
-    # NOTE: I'm using a shit model here for testing, as I
-    # can't run the real model on my machine
-    # Will switch over when on the HPC
+    # NOTE: Using a smaller model for testing on local machine
+    # Can switch to larger models on HPC with more GPU memory
     # llm_model_name: str = "mistralai/Mistral-7B-v0.1"
-    llm_model_name: str = "microsoft/Phi-3-mini-4k-instruct"
+    # llm_model_name: str = "microsoft/Phi-3-mini-4k-instruct"
+    llm_model_name: str = "Qwen/Qwen3-8B-AWQ"
 
     llm_max_model_len: int = 2048
     llm_tensor_parallel_size: int = 1
@@ -42,7 +48,9 @@ class RetrievalConfig:
     """Retrieval configuration settings."""
 
     top_k: int = 5
-    faiss_index_type: str = "IndexFlatIP"
+    faiss_index_type: str = (
+        "IndexFlatIP"  # Inner product for cosine similarity after L2 norm
+    )
     embedding_batch_size: int = 32
 
 
@@ -113,4 +121,5 @@ if __name__ == "__main__":
     print(f"  Embedding model: {config.model.embedding_model_name}")
     print(f"  LLM model: {config.model.llm_model_name}")
     print(f"  Data dir: {config.paths.data_dir}")
+    print(f"  Models dir: {config.paths.models_dir}")
     print(f"  Cache dir: {config.paths.cache_dir}")
