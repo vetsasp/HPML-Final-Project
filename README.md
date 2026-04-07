@@ -7,4 +7,10 @@ Philip Vetsas - pmv264@nyu.edu
 
 Dependencies handled with uv, for simplicity over managing a conda installation. 
 
-run with `uv run`
+## Usage
+
+To run with a prompt:
+`uv run -m src "some prompt"`
+
+To run interactively:
+`uv run src`

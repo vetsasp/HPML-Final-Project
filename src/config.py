@@ -27,10 +27,8 @@ class ModelConfig:
 
     # Language model selection
     # NOTE: Using a smaller model for testing on local machine
-    # Can switch to larger models on HPC with more GPU memory
     # llm_model_name: str = "mistralai/Mistral-7B-v0.1"
-    # llm_model_name: str = "microsoft/Phi-3-mini-4k-instruct"
-    llm_model_name: str = "Qwen/Qwen3-8B-AWQ"
+    llm_model_name: str = "Qwen/Qwen2-0.5B-Instruct"
 
     llm_max_model_len: int = 2048
     llm_tensor_parallel_size: int = 1
