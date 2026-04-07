@@ -61,14 +61,6 @@ def setup_args() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--add-documents",
-        "-a",
-        type=str,
-        nargs="*",
-        help="Add documents to the index before querying",
-    )
-
-    parser.add_argument(
         "--stats",
         action="store_true",
         help="Show pipeline statistics and exit",
@@ -97,12 +89,12 @@ def print_result(result: RAGResult, verbose: bool = False):
             zip(result.retrieved_passages, result.retrieved_scores)
         ):
             if passage:  # Only print non-empty passages
-                print(f"  [{i+1}] Score: {score:.4f}")
+                print(f"  [{i + 1}] Score: {score:.4f}")
                 print(f"      {passage[:100]}...")
 
     print(f"\nTimings:")
     for stage, time_val in result.timings.items():
-        print(f"  {stage}: {time_val*1000:.2f}ms")
+        print(f"  {stage}: {time_val * 1000:.2f}ms")
 
     print("=" * 60 + "\n")
 
@@ -186,12 +178,6 @@ def main():
         for component, info_dict in info.items():
             print(f"  {component}: {info_dict}")
         return 0
-
-    # Handle add-documents option
-    if args.add_documents:
-        print(f"Adding {len(args.add_documents)} documents...")
-        doc_ids = pipeline.add_documents(args.add_documents)
-        print(f"Added documents with IDs: {doc_ids}")
 
     # Execute query or enter interactive mode
     if args.query:

@@ -89,9 +89,84 @@ class Pipeline:
         logger.info("Initializing Generator...")
         self.generator = generator or Generator()
 
+        # Load corpus from file
+        self._load_corpus()
+
         logger.info("Pipeline initialized successfully")
 
-    def add_documents(self, documents: List[str], ids: Optional[List[int]] = None) -> List[int]:
+    def _load_corpus(self):
+        """Load documents from corpus file into the index."""
+        corpus_path = self.config.paths.corpus_path
+
+        if not corpus_path.exists():
+            logger.warning(f"Corpus file not found: {corpus_path}")
+            logger.info("Creating default sample corpus for testing...")
+            self._load_default_corpus()
+            return
+
+        try:
+            import json
+
+            documents = []
+            ids = []
+            skipped = 0
+
+            with open(corpus_path, "r", encoding="utf-8") as f:
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        obj = json.loads(line)
+                        text = obj.get("text") or obj.get("content") or obj.get("doc")
+                        if not text:
+                            skipped += 1
+                            continue
+                        documents.append(text)
+                        ids.append(obj.get("id", len(documents) - 1))
+                    except json.JSONDecodeError:
+                        skipped += 1
+                        continue
+
+            if not documents:
+                logger.warning(f"No valid documents found in {corpus_path}")
+                logger.info("Loading default sample corpus...")
+                self._load_default_corpus()
+                return
+
+            logger.info(f"Loading {len(documents)} documents from {corpus_path}")
+            doc_ids = self.add_documents(documents, ids)
+            logger.info(f"Indexed {len(doc_ids)} documents")
+
+            if skipped > 0:
+                logger.warning(f"Skipped {skipped} malformed lines in corpus")
+
+        except Exception as e:
+            logger.error(f"Failed to load corpus: {e}")
+            logger.info("Loading default sample corpus...")
+            self._load_default_corpus()
+
+    def _load_default_corpus(self):
+        """Load hardcoded default documents for testing."""
+        default_docs = [
+            "Machine learning is a subset of artificial intelligence that enables systems to learn from data and improve their performance without being explicitly programmed.",
+            "Deep learning uses neural networks with multiple layers to learn complex representations from data, enabling breakthroughs in image and speech recognition.",
+            "Natural language processing deals with understanding and generating human language by computers, combining linguistics with machine learning.",
+            "The transformer architecture uses self-attention mechanisms to process sequential data efficiently, revolutionizing NLP tasks.",
+            "Attention mechanisms allow models to focus on relevant parts of input when making predictions, improving accuracy in sequence tasks.",
+            "Retrieval-augmented generation combines retrieval of relevant documents with text generation for more accurate, grounded responses.",
+            "Vector databases store embeddings for efficient similarity search, essential for retrieval in RAG systems.",
+            "FAISS is a library for efficient similarity search of dense vectors, supporting large-scale vector search operations.",
+            "Large language models are neural networks trained on vast text data, capable of generating human-like text and answering questions.",
+            "Fine-tuning adapts pre-trained models to specific tasks by continuing training on task-specific data.",
+        ]
+        ids = list(range(len(default_docs)))
+        self.add_documents(default_docs, ids)
+        logger.info("Default corpus loaded")
+
+    def add_documents(
+        self, documents: List[str], ids: Optional[List[int]] = None
+    ) -> List[int]:
         """
         Add documents to the retrieval index.
 
@@ -103,14 +178,14 @@ class Pipeline:
             List of assigned IDs
         """
         logger.info(f"Adding {len(documents)} documents to index")
-        
+
         # Encode documents
         embeddings, embed_time = self.embedder.encode(documents)
         logger.debug(f"Document embedding took {embed_time:.4f}s")
-        
+
         # Add to index (including document texts)
         doc_ids, _ = self.retriever.add_embeddings(embeddings, ids, documents)
-        
+
         logger.info(f"Added {len(doc_ids)} documents to index")
         return doc_ids
 
@@ -149,14 +224,14 @@ class Pipeline:
         # Get the actual passages using the mapped IDs
         flat_ids = [id_val for id_val in mapped_ids[0] if id_val != -1]
         retrieved_passages = self.retriever.get_documents_by_ids(flat_ids)
-        retrieved_scores = distances[0].tolist()[:len(retrieved_passages)]
+        retrieved_scores = distances[0].tolist()[: len(retrieved_passages)]
 
         # Step 3: Generate response
         start = time.perf_counter()
-        
+
         # Format RAG prompt
         prompt = format_rag_prompt(query, retrieved_passages)
-        
+
         # Generate
         generated_texts, gen_time = self.generator.generate(
             prompt, max_tokens=max_tokens or self.config.model.max_tokens
@@ -199,10 +274,10 @@ class Pipeline:
         timings = {}
 
         start = time.perf_counter()
-        
+
         # Format RAG prompt with provided passages
         prompt = format_rag_prompt(query, passages[:top_k])
-        
+
         # Generate
         generated_texts, gen_time = self.generator.generate(
             prompt, max_tokens=max_tokens or self.config.model.max_tokens

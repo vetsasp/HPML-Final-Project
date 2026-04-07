@@ -205,16 +205,24 @@ class Generator:
 def format_rag_prompt(
     query: str, retrieved_passages: List[str], max_context_length: int = 2048
 ) -> str:
-    context = "\n\n".join(
-        [f"Passage {i+1}: {p}" for i, p in enumerate(retrieved_passages)]
-    )
-    prompt = f"""Context information:
+    if not retrieved_passages or all(not p for p in retrieved_passages):
+        return query
+
+    # Filter out empty passages
+    valid_passages = [p for p in retrieved_passages if p]
+    if not valid_passages:
+        return query
+
+    context = "\n\n".join(valid_passages)
+    prompt = f"""<|im_start|>system
+You are a helpful assistant. Use ONLY the information provided in the context to answer the question. If the context doesn't contain relevant information, say so.<|im_end|>
+<|im_start|>user
+Context:
 {context}
 
-User query: {query}
-
-Based on the context information above, please answer the user query.
-Answer:"""
+Question: {query}<|im_end|>
+<|im_start|>assistant
+"""
     return prompt
 
 
