@@ -3,11 +3,11 @@ Generator component for RAG pipeline.
 Handles text generation using vLLM.
 """
 
+import atexit
 import logging
 import os
 import sys
 import time
-import atexit
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -116,6 +116,8 @@ class Generator:
                 dtype="auto",
                 enforce_eager=True,
             )
+            # Get tokenizer for chat template
+            self.tokenizer = self.engine.get_tokenizer()
             logger.info("vLLM engine initialized successfully")
         except RuntimeError as e:
             err = str(e)
@@ -144,8 +146,8 @@ class Generator:
         max_tokens: Optional[int] = None,
         stop: Optional[List[str]] = None,
     ) -> Tuple[List[str], float]:
-        import io
         import contextlib
+        import io
 
         if isinstance(prompts, str):
             prompts = [prompts]
@@ -203,7 +205,10 @@ class Generator:
 
 
 def format_rag_prompt(
-    query: str, retrieved_passages: List[str], max_context_length: int = 2048
+    query: str,
+    retrieved_passages: List[str],
+    tokenizer=None,
+    max_context_length: int = 2048,
 ) -> str:
     if not retrieved_passages or all(not p for p in retrieved_passages):
         return query
@@ -214,16 +219,30 @@ def format_rag_prompt(
         return query
 
     context = "\n\n".join(valid_passages)
-    prompt = f"""<|im_start|>system
-You are a helpful assistant. Use ONLY the information provided in the context to answer the question. If the context doesn't contain relevant information, say so.<|im_end|>
-<|im_start|>user
-Context:
+
+    # Use tokenizer's chat template if available (model-specific format)
+    if tokenizer is not None:
+        messages = [
+            {
+                "role": "system",
+                "content": "Use ONLY the information provided in the context to answer. Respond in your own words. If insufficient, say so.",
+            },
+            {
+                "role": "user",
+                "content": f"Context:\n{context}\n\nQuestion: {query}",
+            },
+        ]
+        return tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+
+    # Fallback for no tokenizer
+    return f"""Context:
 {context}
 
-Question: {query}<|im_end|>
-<|im_start|>assistant
-"""
-    return prompt
+Question: {query}
+
+Answer:"""
 
 
 def test_generator():

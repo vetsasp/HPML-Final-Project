@@ -229,8 +229,10 @@ class Pipeline:
         # Step 3: Generate response
         start = time.perf_counter()
 
-        # Format RAG prompt
-        prompt = format_rag_prompt(query, retrieved_passages)
+        # Format RAG prompt (uses model's chat template automatically)
+        prompt = format_rag_prompt(
+            query, retrieved_passages, tokenizer=self.generator.tokenizer
+        )
 
         # Generate
         generated_texts, gen_time = self.generator.generate(
