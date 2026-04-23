@@ -68,6 +68,8 @@ class Generator:
         max_model_len: Optional[int] = None,
         gpu_memory_utilization: Optional[float] = None,
         tensor_parallel_size: Optional[int] = None,
+        enable_kv_reuse: bool = False,
+        batch_size: int = 1,
     ):
         self.config = config.config
         self.model_name = model_name or self.config.model.llm_model_name
@@ -78,10 +80,14 @@ class Generator:
         self.tensor_parallel_size = (
             tensor_parallel_size or self.config.model.llm_tensor_parallel_size
         )
+        self.enable_kv_reuse = enable_kv_reuse
+        self.batch_size = batch_size
 
         logger.info(f"Initializing Generator with model: {self.model_name}")
         logger.info(f"Max model length: {self.max_model_len}")
         logger.info(f"GPU memory utilization: {self.gpu_memory_utilization}")
+        logger.info(f"KV cache reuse: {enable_kv_reuse}")
+        logger.info(f"Batch size: {batch_size}")
 
         # Check GPU availability before trying to initialize
         can_run, msg = check_gpu_memory()
@@ -115,6 +121,7 @@ class Generator:
                 tensor_parallel_size=self.tensor_parallel_size,
                 dtype="auto",
                 enforce_eager=True,
+                enable_prefix_caching=self.enable_kv_reuse,
             )
             # Get tokenizer for chat template
             self.tokenizer = self.engine.get_tokenizer()
@@ -195,8 +202,16 @@ class Generator:
             "max_model_len": self.max_model_len,
             "gpu_memory_utilization": self.gpu_memory_utilization,
             "tensor_parallel_size": self.tensor_parallel_size,
+            "enable_kv_reuse": self.enable_kv_reuse,
+            "batch_size": self.batch_size,
             "engine_initialized": self.engine is not None,
         }
+
+    def get_gpu_memory(self) -> float:
+        """Get current GPU memory usage in GB."""
+        if torch.cuda.is_available():
+            return torch.cuda.memory_allocated() / (1024**3)
+        return 0.0
 
     def cleanup(self):
         """Clean up distributed process group to avoid NCCL warnings."""

@@ -67,6 +67,8 @@ class Pipeline:
         embedder: Optional[Embedder] = None,
         retriever: Optional[Retriever] = None,
         generator: Optional[Generator] = None,
+        enable_kv_reuse: bool = False,
+        batch_size: int = 1,
     ):
         """
         Initialize the pipeline.
@@ -75,9 +77,15 @@ class Pipeline:
             embedder: Embedder component (creates if None)
             retriever: Retriever component (creates if None)
             generator: Generator component (creates if None)
+            enable_kv_reuse: Enable KV cache prefix caching
+            batch_size: Number of queries to process in batch
         """
         self.config = config.config
+        self.enable_kv_reuse = enable_kv_reuse
+        self.batch_size = batch_size
         logger.info("Initializing RAG Pipeline")
+        logger.info(f"Enable KV reuse: {enable_kv_reuse}")
+        logger.info(f"Batch size: {batch_size}")
 
         # Initialize components
         logger.info("Initializing Embedder...")
@@ -87,7 +95,10 @@ class Pipeline:
         self.retriever = retriever or Retriever()
 
         logger.info("Initializing Generator...")
-        self.generator = generator or Generator()
+        self.generator = generator or Generator(
+            enable_kv_reuse=enable_kv_reuse,
+            batch_size=batch_size,
+        )
 
         # Load corpus from file
         self._load_corpus()
@@ -299,8 +310,77 @@ class Pipeline:
         )
 
     def get_index_stats(self) -> Dict[str, Any]:
-        """Get statistics about the retrieval index."""
+        """Get information about the retrieval index."""
         return self.retriever.get_index_stats()
+
+    def query_batch(
+        self,
+        queries: List[str],
+        top_k: Optional[int] = None,
+    ) -> List[RAGResult]:
+        """
+        Execute batch of RAG queries.
+
+        Args:
+            queries: List of user query strings
+            top_k: Number of passages to retrieve per query
+
+        Returns:
+            List of RAGResults
+        """
+        import torch
+
+        top_k = top_k or self.config.retrieval.top_k
+        timings = {}
+
+        # Step 1: Embed all queries at once
+        start = time.perf_counter()
+        query_embeddings, embed_time = self.embedder.encode(queries)
+        timings["embedding"] = embed_time
+
+        results = []
+
+        # Step 2 & 3: Retrieve and generate for each query
+        for i, query in enumerate(queries):
+            start = time.perf_counter()
+            distances, indices, mapped_ids, search_time = self.retriever.search(
+                query_embeddings[i : i + 1], k=top_k
+            )
+            timings["retrieval"] = search_time
+
+            flat_ids = [id_val for id_val in mapped_ids[0] if id_val != -1]
+            retrieved_passages = self.retriever.get_documents_by_ids(flat_ids)
+            retrieved_scores = distances[0].tolist()[: len(retrieved_passages)]
+
+            start = time.perf_counter()
+            prompt = format_rag_prompt(
+                query, retrieved_passages, tokenizer=self.generator.tokenizer
+            )
+
+            generated_texts, gen_time = self.generator.generate(
+                prompt, max_tokens=self.config.model.max_tokens
+            )
+            timings["generation"] = gen_time
+            timings["total"] = sum(timings.values())
+
+            results.append(
+                RAGResult(
+                    query=query,
+                    answer=generated_texts[0] if generated_texts else "",
+                    retrieved_passages=retrieved_passages,
+                    retrieved_scores=retrieved_scores,
+                    timings=timings.copy(),
+                    metadata={
+                        "top_k": top_k,
+                        "model": self.config.model.llm_model_name,
+                        "gpu_memory_gb": torch.cuda.memory_allocated() / (1024**3)
+                        if torch.cuda.is_available()
+                        else 0,
+                    },
+                )
+            )
+
+        return results
 
     def get_component_info(self) -> Dict[str, Dict[str, Any]]:
         """Get information about all components."""

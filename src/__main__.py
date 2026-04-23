@@ -61,6 +61,18 @@ def setup_args() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--kv",
+        action="store_true",
+        help="Enable KV cache prefix caching",
+    )
+
+    parser.add_argument(
+        "--tiered",
+        action="store_true",
+        help="Enable batch processing (tiered memory)",
+    )
+
+    parser.add_argument(
         "--stats",
         action="store_true",
         help="Show pipeline statistics and exit",
@@ -167,7 +179,11 @@ def main():
 
     # Initialize pipeline
     print("Initializing RAG Pipeline...")
-    pipeline = Pipeline()
+    batch_size = 4 if args.tiered else 1
+    pipeline = Pipeline(
+        enable_kv_reuse=args.kv,
+        batch_size=batch_size,
+    )
 
     # Handle stats option
     if args.stats:
