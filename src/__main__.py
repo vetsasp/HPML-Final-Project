@@ -73,6 +73,22 @@ def setup_args() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--quantize",
+        "-q",
+        type=str,
+        default=None,
+        choices=["awq", "gptq", "squeezequant", "fp8"],
+        help="Enable quantization (awq, gptq, squeezequant, fp8)",
+    )
+
+    parser.add_argument(
+        "--overlap",
+        "-o",
+        action="store_true",
+        help="Enable retrieval-inference overlap",
+    )
+
+    parser.add_argument(
         "--stats",
         action="store_true",
         help="Show pipeline statistics and exit",
@@ -183,6 +199,8 @@ def main():
     pipeline = Pipeline(
         enable_kv_reuse=args.kv,
         batch_size=batch_size,
+        quantization=args.quantize,
+        enable_overlap=args.overlap,
     )
 
     # Handle stats option

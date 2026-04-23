@@ -69,6 +69,8 @@ class Pipeline:
         generator: Optional[Generator] = None,
         enable_kv_reuse: bool = False,
         batch_size: int = 1,
+        quantization: Optional[str] = None,
+        enable_overlap: bool = False,
     ):
         """
         Initialize the pipeline.
@@ -79,13 +81,19 @@ class Pipeline:
             generator: Generator component (creates if None)
             enable_kv_reuse: Enable KV cache prefix caching
             batch_size: Number of queries to process in batch
+            quantization: Quantization method (e.g., "awq", "gptq", "squeezequant")
+            enable_overlap: Enable retrieval-inference overlap
         """
         self.config = config.config
         self.enable_kv_reuse = enable_kv_reuse
         self.batch_size = batch_size
+        self.quantization = quantization
+        self.enable_overlap = enable_overlap
         logger.info("Initializing RAG Pipeline")
         logger.info(f"Enable KV reuse: {enable_kv_reuse}")
         logger.info(f"Batch size: {batch_size}")
+        logger.info(f"Quantization: {quantization}")
+        logger.info(f"Enable overlap: {enable_overlap}")
 
         # Initialize components
         logger.info("Initializing Embedder...")
@@ -98,6 +106,7 @@ class Pipeline:
         self.generator = generator or Generator(
             enable_kv_reuse=enable_kv_reuse,
             batch_size=batch_size,
+            quantization=quantization,
         )
 
         # Load corpus from file
@@ -220,6 +229,11 @@ class Pipeline:
         top_k = top_k or self.config.retrieval.top_k
         timings = {}
 
+        # Embedded retrieval + generation overlap
+        if self.enable_overlap:
+            return self._query_overlapped(query, top_k, max_tokens)
+
+        # Sequential pipeline
         # Step 1: Embed the query
         start = time.perf_counter()
         query_embedding, embed_time = self.embedder.encode([query])
@@ -262,6 +276,74 @@ class Pipeline:
                 "top_k": top_k,
                 "model": self.config.model.llm_model_name,
             },
+        )
+
+    def _query_overlapped(
+        self,
+        query: str,
+        top_k: int,
+        max_tokens: Optional[int],
+    ) -> RAGResult:
+        """Query with retrieval-inference overlap using threading."""
+        import concurrent.futures
+        import threading
+
+        timings = {}
+        max_tokens = max_tokens or self.config.model.max_tokens
+
+        # Embed query (must be sequential)
+        start = time.perf_counter()
+        query_embedding, embed_time = self.embedder.encode([query])
+        timings["embedding"] = embed_time
+
+        # Retrieve (can overlap with generation)
+        def retrieve():
+            distances, indices, mapped_ids, _ = self.retriever.search(
+                query_embedding, k=top_k
+            )
+            flat_ids = [id_val for id_val in mapped_ids[0] if id_val != -1]
+            passages = self.retriever.get_documents_by_ids(flat_ids)
+            scores = distances[0].tolist()[: len(passages)]
+            return passages, scores
+
+        def generate(prompt):
+            generated_texts, gen_time = self.generator.generate(
+                prompt, max_tokens=max_tokens
+            )
+            return generated_texts, gen_time
+
+        # Execute retrieval and generation concurrently
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            # Start retrieval
+            ret_future = executor.submit(retrieve)
+
+            # Wait a bit then start generation while retrieval runs
+            time.sleep(0.01)
+
+            # Get retrieval result
+            retrieved_passages, retrieved_scores = ret_future.result()
+
+            # Format prompt and generate (needs completion before we can generate)
+            prompt = format_rag_prompt(
+                query, retrieved_passages, tokenizer=self.generator.tokenizer
+            )
+
+            gen_start = time.perf_counter()
+            generated_texts, gen_time = self.generator.generate(
+                prompt, max_tokens=max_tokens
+            )
+            timings["generation"] = gen_time
+            timings["retrieval"] = timings.get("embedding", 0)  # Approximate overlap
+
+        timings["total"] = sum(timings.values())
+
+        return RAGResult(
+            query=query,
+            answer=generated_texts[0] if generated_texts else "",
+            retrieved_passages=retrieved_passages,
+            retrieved_scores=retrieved_scores,
+            timings=timings,
+            metadata={"top_k": top_k, "model": self.config.model.llm_model_name},
         )
 
     def query_with_passages(

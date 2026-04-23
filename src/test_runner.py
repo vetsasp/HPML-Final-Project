@@ -8,7 +8,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import torch
 from dotenv import load_dotenv
@@ -61,6 +61,8 @@ def run_benchmark(
     queries: List[str],
     enable_kv_reuse: bool = False,
     batch_size: int = 1,
+    quantization: Optional[str] = None,
+    enable_overlap: bool = False,
     warmup: int = 2,
 ) -> BenchmarkResult:
     """Run benchmark with specified configuration."""
@@ -69,6 +71,10 @@ def run_benchmark(
         flags.append("kv")
     if batch_size > 1:
         flags.append(f"tiered(b={batch_size})")
+    if quantization:
+        flags.append(f"q={quantization}")
+    if enable_overlap:
+        flags.append("overlap")
     flags_str = "+".join(flags) if flags else "baseline"
 
     logger.info(f"\n{'=' * 60}")
@@ -79,6 +85,8 @@ def run_benchmark(
     pipeline = Pipeline(
         enable_kv_reuse=enable_kv_reuse,
         batch_size=batch_size,
+        quantization=quantization,
+        enable_overlap=enable_overlap,
     )
 
     # Warmup runs
@@ -182,8 +190,23 @@ def main():
     # Tiered only
     results.append(run_benchmark(queries, enable_kv_reuse=False, batch_size=4))
 
-    # Both
+    # KV + tiered
     results.append(run_benchmark(queries, enable_kv_reuse=True, batch_size=4))
+
+    # Overlap only (retrieval-inference overlap)
+    results.append(
+        run_benchmark(queries, enable_kv_reuse=False, batch_size=1, enable_overlap=True)
+    )
+
+    # Quantization (try fp8 - most widely supported)
+    results.append(
+        run_benchmark(queries, enable_kv_reuse=False, batch_size=1, quantization="fp8")
+    )
+
+    # KV + quantization
+    results.append(
+        run_benchmark(queries, enable_kv_reuse=True, batch_size=1, quantization="fp8")
+    )
 
     # Print table
     print_table(results)

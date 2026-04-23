@@ -70,6 +70,7 @@ class Generator:
         tensor_parallel_size: Optional[int] = None,
         enable_kv_reuse: bool = False,
         batch_size: int = 1,
+        quantization: Optional[str] = None,
     ):
         self.config = config.config
         self.model_name = model_name or self.config.model.llm_model_name
@@ -82,12 +83,14 @@ class Generator:
         )
         self.enable_kv_reuse = enable_kv_reuse
         self.batch_size = batch_size
+        self.quantization = quantization
 
         logger.info(f"Initializing Generator with model: {self.model_name}")
         logger.info(f"Max model length: {self.max_model_len}")
         logger.info(f"GPU memory utilization: {self.gpu_memory_utilization}")
         logger.info(f"KV cache reuse: {enable_kv_reuse}")
         logger.info(f"Batch size: {batch_size}")
+        logger.info(f"Quantization: {quantization}")
 
         # Check GPU availability before trying to initialize
         can_run, msg = check_gpu_memory()
@@ -122,6 +125,7 @@ class Generator:
                 dtype="auto",
                 enforce_eager=True,
                 enable_prefix_caching=self.enable_kv_reuse,
+                quantization=self.quantization,
             )
             # Get tokenizer for chat template
             self.tokenizer = self.engine.get_tokenizer()
@@ -204,6 +208,7 @@ class Generator:
             "tensor_parallel_size": self.tensor_parallel_size,
             "enable_kv_reuse": self.enable_kv_reuse,
             "batch_size": self.batch_size,
+            "quantization": self.quantization,
             "engine_initialized": self.engine is not None,
         }
 
