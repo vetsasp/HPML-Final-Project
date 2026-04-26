@@ -69,7 +69,7 @@ def setup_args() -> argparse.ArgumentParser:
     parser.add_argument(
         "--tiered",
         action="store_true",
-        help="Enable batch processing (tiered memory)",
+        help="Enable tiered KV cache residency tracking across GPU, CPU, and disk",
     )
 
     parser.add_argument(
@@ -195,12 +195,12 @@ def main():
 
     # Initialize pipeline
     print("Initializing RAG Pipeline...")
-    batch_size = 4 if args.tiered else 1
     pipeline = Pipeline(
         enable_kv_reuse=args.kv,
-        batch_size=batch_size,
+        batch_size=1,
         quantization=args.quantize,
         enable_overlap=args.overlap,
+        enable_tiered_kv=args.tiered,
     )
 
     # Handle stats option

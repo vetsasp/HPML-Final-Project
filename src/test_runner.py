@@ -60,7 +60,7 @@ def get_test_queries() -> List[str]:
 def run_benchmark(
     queries: List[str],
     enable_kv_reuse: bool = False,
-    batch_size: int = 1,
+    enable_tiered_kv: bool = False,
     quantization: Optional[str] = None,
     enable_overlap: bool = False,
     warmup: int = 2,
@@ -69,8 +69,8 @@ def run_benchmark(
     flags = []
     if enable_kv_reuse:
         flags.append("kv")
-    if batch_size > 1:
-        flags.append(f"tiered(b={batch_size})")
+    if enable_tiered_kv:
+        flags.append("tiered")
     if quantization:
         flags.append(f"q={quantization}")
     if enable_overlap:
@@ -84,9 +84,10 @@ def run_benchmark(
     # Initialize pipeline
     pipeline = Pipeline(
         enable_kv_reuse=enable_kv_reuse,
-        batch_size=batch_size,
+        batch_size=1,
         quantization=quantization,
         enable_overlap=enable_overlap,
+        enable_tiered_kv=enable_tiered_kv,
     )
 
     # Warmup runs
@@ -182,31 +183,25 @@ def main():
     results = []
 
     # Baseline
-    results.append(run_benchmark(queries, enable_kv_reuse=False, batch_size=1))
+    results.append(run_benchmark(queries, enable_kv_reuse=False))
 
     # KV only
-    results.append(run_benchmark(queries, enable_kv_reuse=True, batch_size=1))
+    results.append(run_benchmark(queries, enable_kv_reuse=True))
 
     # Tiered only
-    results.append(run_benchmark(queries, enable_kv_reuse=False, batch_size=4))
+    results.append(run_benchmark(queries, enable_tiered_kv=True))
 
     # KV + tiered
-    results.append(run_benchmark(queries, enable_kv_reuse=True, batch_size=4))
+    results.append(run_benchmark(queries, enable_kv_reuse=True, enable_tiered_kv=True))
 
     # Overlap only (retrieval-inference overlap)
-    results.append(
-        run_benchmark(queries, enable_kv_reuse=False, batch_size=1, enable_overlap=True)
-    )
+    results.append(run_benchmark(queries, enable_kv_reuse=False, enable_overlap=True))
 
     # Quantization (try fp8 - most widely supported)
-    results.append(
-        run_benchmark(queries, enable_kv_reuse=False, batch_size=1, quantization="fp8")
-    )
+    results.append(run_benchmark(queries, enable_kv_reuse=False, quantization="fp8"))
 
     # KV + quantization
-    results.append(
-        run_benchmark(queries, enable_kv_reuse=True, batch_size=1, quantization="fp8")
-    )
+    results.append(run_benchmark(queries, enable_kv_reuse=True, quantization="fp8"))
 
     # Print table
     print_table(results)

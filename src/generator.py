@@ -31,11 +31,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
     from . import config, utils
+    from .kv_cache_manager import TieredKVManager
+    from .prompt_blocks import SYSTEM_PROMPT, render_blocks_to_prompt
 
     logger = logging.getLogger("rag_pipeline")
 except ImportError:
     import config
     import utils
+    from kv_cache_manager import TieredKVManager
+    from prompt_blocks import SYSTEM_PROMPT, render_blocks_to_prompt
 
     logger = utils.setup_logging(logging.INFO)
 
@@ -71,6 +75,8 @@ class Generator:
         enable_kv_reuse: bool = False,
         batch_size: int = 1,
         quantization: Optional[str] = None,
+        enable_tiered_kv: bool = False,
+        kv_manager: Optional[TieredKVManager] = None,
     ):
         self.config = config.config
         self.model_name = model_name or self.config.model.llm_model_name
@@ -84,6 +90,8 @@ class Generator:
         self.enable_kv_reuse = enable_kv_reuse
         self.batch_size = batch_size
         self.quantization = quantization
+        self.enable_tiered_kv = enable_tiered_kv
+        self.kv_manager = kv_manager
 
         logger.info(f"Initializing Generator with model: {self.model_name}")
         logger.info(f"Max model length: {self.max_model_len}")
@@ -91,6 +99,7 @@ class Generator:
         logger.info(f"KV cache reuse: {enable_kv_reuse}")
         logger.info(f"Batch size: {batch_size}")
         logger.info(f"Quantization: {quantization}")
+        logger.info(f"Tiered KV cache: {enable_tiered_kv}")
 
         # Check GPU availability before trying to initialize
         can_run, msg = check_gpu_memory()
@@ -183,6 +192,47 @@ class Generator:
         elapsed = time.perf_counter() - start_time
         return results, elapsed
 
+    def _get_block_token_count(self, block) -> int:
+        """Estimate token count for a prompt block using the active tokenizer."""
+        if getattr(block, "token_count", None) is not None:
+            return block.token_count
+        if hasattr(self, "tokenizer") and self.tokenizer is not None:
+            return len(self.tokenizer.encode(block.text, add_special_tokens=False))
+        return max(1, len(block.text) // 4)
+
+    def prepare_blocks(self, blocks: List[Any]) -> List[Any]:
+        """Register cacheable blocks with the tiered cache manager."""
+        if not self.enable_tiered_kv or self.kv_manager is None:
+            return []
+
+        entries = []
+        for block in blocks:
+            if not getattr(block, "cacheable", False):
+                continue
+            token_count = self._get_block_token_count(block)
+            block.token_count = token_count
+            entries.append(self.kv_manager.prepare_entry(block, token_count))
+        return entries
+
+    def generate_with_blocks(
+        self,
+        blocks: List[Any],
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        stop: Optional[List[str]] = None,
+    ) -> Tuple[List[str], float]:
+        """Generate from cache-aware prompt blocks."""
+        self.prepare_blocks(blocks)
+        prompt = render_blocks_to_prompt(blocks, tokenizer=self.tokenizer)
+        return self.generate(
+            prompt,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+        )
+
     def generate_single(
         self,
         prompt: str,
@@ -201,7 +251,7 @@ class Generator:
         return results[0]
 
     def get_model_info(self) -> Dict[str, Any]:
-        return {
+        info = {
             "model_name": self.model_name,
             "max_model_len": self.max_model_len,
             "gpu_memory_utilization": self.gpu_memory_utilization,
@@ -209,8 +259,18 @@ class Generator:
             "enable_kv_reuse": self.enable_kv_reuse,
             "batch_size": self.batch_size,
             "quantization": self.quantization,
+            "enable_tiered_kv": self.enable_tiered_kv,
             "engine_initialized": self.engine is not None,
         }
+        if self.kv_manager is not None:
+            info["tiered_kv_cache"] = self.kv_manager.get_stats()
+        return info
+
+    def get_tiered_cache_stats(self) -> Dict[str, Any]:
+        """Return tiered cache statistics when enabled."""
+        if self.kv_manager is None:
+            return {}
+        return self.kv_manager.get_stats()
 
     def get_gpu_memory(self) -> float:
         """Get current GPU memory usage in GB."""
@@ -240,13 +300,9 @@ def format_rag_prompt(
 
     context = "\n\n".join(valid_passages)
 
-    # Use tokenizer's chat template if available (model-specific format)
     if tokenizer is not None:
         messages = [
-            {
-                "role": "system",
-                "content": "Use ONLY the information provided in the context to answer. Respond in your own words. If insufficient, say so.",
-            },
+            {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": f"Context:\n{context}\n\nQuestion: {query}",
@@ -256,7 +312,6 @@ def format_rag_prompt(
             messages, tokenize=False, add_generation_prompt=True
         )
 
-    # Fallback for no tokenizer
     return f"""Context:
 {context}
 

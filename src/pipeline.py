@@ -23,6 +23,8 @@ try:
     from .embedder import Embedder
     from .retriever import Retriever, create_sample_data
     from .generator import Generator, format_rag_prompt
+    from .kv_cache_manager import TieredKVManager
+    from .prompt_blocks import build_rag_blocks
 
     logger = logging.getLogger("rag_pipeline")
 except ImportError:
@@ -31,6 +33,8 @@ except ImportError:
     from embedder import Embedder
     from retriever import Retriever, create_sample_data
     from generator import Generator, format_rag_prompt
+    from kv_cache_manager import TieredKVManager
+    from prompt_blocks import build_rag_blocks
 
     logger = utils.setup_logging(logging.INFO)
 
@@ -71,6 +75,7 @@ class Pipeline:
         batch_size: int = 1,
         quantization: Optional[str] = None,
         enable_overlap: bool = False,
+        enable_tiered_kv: bool = False,
     ):
         """
         Initialize the pipeline.
@@ -89,11 +94,15 @@ class Pipeline:
         self.batch_size = batch_size
         self.quantization = quantization
         self.enable_overlap = enable_overlap
+        self.enable_tiered_kv = enable_tiered_kv
         logger.info("Initializing RAG Pipeline")
         logger.info(f"Enable KV reuse: {enable_kv_reuse}")
         logger.info(f"Batch size: {batch_size}")
         logger.info(f"Quantization: {quantization}")
         logger.info(f"Enable overlap: {enable_overlap}")
+        logger.info(f"Enable tiered KV: {enable_tiered_kv}")
+
+        self.kv_manager = TieredKVManager(self.config) if enable_tiered_kv else None
 
         # Initialize components
         logger.info("Initializing Embedder...")
@@ -107,6 +116,8 @@ class Pipeline:
             enable_kv_reuse=enable_kv_reuse,
             batch_size=batch_size,
             quantization=quantization,
+            enable_tiered_kv=enable_tiered_kv,
+            kv_manager=self.kv_manager,
         )
 
         # Load corpus from file
@@ -254,17 +265,29 @@ class Pipeline:
         # Step 3: Generate response
         start = time.perf_counter()
 
-        # Format RAG prompt (uses model's chat template automatically)
-        prompt = format_rag_prompt(
-            query, retrieved_passages, tokenizer=self.generator.tokenizer
-        )
-
-        # Generate
-        generated_texts, gen_time = self.generator.generate(
-            prompt, max_tokens=max_tokens or self.config.model.max_tokens
-        )
+        if self.enable_tiered_kv:
+            blocks = build_rag_blocks(
+                query,
+                retrieved_passages,
+                max_context_length=self.config.model.llm_max_model_len,
+            )
+            generated_texts, gen_time = self.generator.generate_with_blocks(
+                blocks,
+                max_tokens=max_tokens or self.config.model.max_tokens,
+            )
+        else:
+            prompt = format_rag_prompt(
+                query, retrieved_passages, tokenizer=self.generator.tokenizer
+            )
+            generated_texts, gen_time = self.generator.generate(
+                prompt, max_tokens=max_tokens or self.config.model.max_tokens
+            )
         timings["generation"] = gen_time
         timings["total"] = sum(timings.values())
+
+        cache_stats = (
+            self.generator.get_tiered_cache_stats() if self.enable_tiered_kv else {}
+        )
 
         return RAGResult(
             query=query,
@@ -275,6 +298,8 @@ class Pipeline:
             metadata={
                 "top_k": top_k,
                 "model": self.config.model.llm_model_name,
+                "tiered_kv_enabled": self.enable_tiered_kv,
+                "tiered_kv_cache": cache_stats,
             },
         )
 
@@ -370,14 +395,27 @@ class Pipeline:
 
         start = time.perf_counter()
 
-        # Format RAG prompt with provided passages
-        prompt = format_rag_prompt(query, passages[:top_k])
-
-        # Generate
-        generated_texts, gen_time = self.generator.generate(
-            prompt, max_tokens=max_tokens or self.config.model.max_tokens
-        )
+        if self.enable_tiered_kv:
+            blocks = build_rag_blocks(
+                query,
+                passages[:top_k],
+                max_context_length=self.config.model.llm_max_model_len,
+            )
+            generated_texts, gen_time = self.generator.generate_with_blocks(
+                blocks, max_tokens=max_tokens or self.config.model.max_tokens
+            )
+        else:
+            prompt = format_rag_prompt(
+                query, passages[:top_k], tokenizer=self.generator.tokenizer
+            )
+            generated_texts, gen_time = self.generator.generate(
+                prompt, max_tokens=max_tokens or self.config.model.max_tokens
+            )
         timings["generation"] = gen_time
+
+        cache_stats = (
+            self.generator.get_tiered_cache_stats() if self.enable_tiered_kv else {}
+        )
 
         return RAGResult(
             query=query,
@@ -388,6 +426,8 @@ class Pipeline:
             metadata={
                 "top_k": top_k,
                 "model": self.config.model.llm_model_name,
+                "tiered_kv_enabled": self.enable_tiered_kv,
+                "tiered_kv_cache": cache_stats,
             },
         )
 
@@ -435,15 +475,28 @@ class Pipeline:
             retrieved_scores = distances[0].tolist()[: len(retrieved_passages)]
 
             start = time.perf_counter()
-            prompt = format_rag_prompt(
-                query, retrieved_passages, tokenizer=self.generator.tokenizer
-            )
-
-            generated_texts, gen_time = self.generator.generate(
-                prompt, max_tokens=self.config.model.max_tokens
-            )
+            if self.enable_tiered_kv:
+                blocks = build_rag_blocks(
+                    query,
+                    retrieved_passages,
+                    max_context_length=self.config.model.llm_max_model_len,
+                )
+                generated_texts, gen_time = self.generator.generate_with_blocks(
+                    blocks, max_tokens=self.config.model.max_tokens
+                )
+            else:
+                prompt = format_rag_prompt(
+                    query, retrieved_passages, tokenizer=self.generator.tokenizer
+                )
+                generated_texts, gen_time = self.generator.generate(
+                    prompt, max_tokens=self.config.model.max_tokens
+                )
             timings["generation"] = gen_time
             timings["total"] = sum(timings.values())
+
+            cache_stats = (
+                self.generator.get_tiered_cache_stats() if self.enable_tiered_kv else {}
+            )
 
             results.append(
                 RAGResult(
@@ -458,6 +511,8 @@ class Pipeline:
                         "gpu_memory_gb": torch.cuda.memory_allocated() / (1024**3)
                         if torch.cuda.is_available()
                         else 0,
+                        "tiered_kv_enabled": self.enable_tiered_kv,
+                        "tiered_kv_cache": cache_stats,
                     },
                 )
             )

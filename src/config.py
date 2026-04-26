@@ -42,6 +42,19 @@ class ModelConfig:
 
 
 @dataclass
+class TieredKVConfig:
+    """Tiered KV cache configuration settings."""
+
+    enable: bool = False
+    gpu_kv_budget_mb: int = 512
+    cpu_kv_budget_mb: int = 1024
+    disk_kv_budget_mb: int = 4096
+    cache_policy: str = "lru"
+    passage_block_max_tokens: int = 256
+    min_reuse_count_for_gpu: int = 2
+
+
+@dataclass
 class RetrievalConfig:
     """Retrieval configuration settings."""
 
@@ -70,6 +83,7 @@ class PathsConfig:
     # Cache files
     embedding_cache_path: Path = cache_dir / "embeddings.npy"
     faiss_index_path: Path = cache_dir / "faiss_index.idx"
+    kv_cache_dir: Path = cache_dir / "kv"
 
 
 @dataclass
@@ -99,6 +113,7 @@ class Config:
 
     def __init__(self):
         self.model = ModelConfig()
+        self.tiered_kv = TieredKVConfig()
         self.retrieval = RetrievalConfig()
         self.paths = PathsConfig()
         self.device = DeviceConfig()
@@ -107,6 +122,7 @@ class Config:
         self.paths.data_dir.mkdir(exist_ok=True)
         self.paths.models_dir.mkdir(exist_ok=True)
         self.paths.cache_dir.mkdir(exist_ok=True)
+        self.paths.kv_cache_dir.mkdir(exist_ok=True)
 
 
 # Global config instance
