@@ -125,6 +125,110 @@ class Pipeline:
 
         logger.info("Pipeline initialized successfully")
 
+    def _prepare_query(
+        self,
+        query: str,
+        top_k: int,
+        query_embedding: Optional[np.ndarray] = None,
+    ) -> Dict[str, Any]:
+        """Prepare a query through embedding and retrieval."""
+        timings = {}
+
+        if query_embedding is None:
+            query_embedding, embed_time = self.embedder.encode([query])
+            timings["embedding"] = embed_time
+        else:
+            timings["embedding"] = 0.0
+
+        distances, indices, mapped_ids, search_time = self.retriever.search(
+            query_embedding, k=top_k
+        )
+        timings["retrieval"] = search_time
+
+        flat_ids = [id_val for id_val in mapped_ids[0] if id_val != -1]
+        retrieved_passages = self.retriever.get_documents_by_ids(flat_ids)
+        retrieved_scores = distances[0].tolist()[: len(retrieved_passages)]
+
+        return {
+            "query": query,
+            "retrieved_passages": retrieved_passages,
+            "retrieved_scores": retrieved_scores,
+            "timings": timings,
+        }
+
+    def _generate_prepared_query(
+        self,
+        prepared: Dict[str, Any],
+        max_tokens: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Generate an answer from a prepared query payload."""
+        max_tokens = max_tokens or self.config.model.max_tokens
+
+        if self.enable_tiered_kv:
+            blocks = build_rag_blocks(
+                prepared["query"],
+                prepared["retrieved_passages"],
+                max_context_length=self.config.model.llm_max_model_len,
+            )
+            generated_texts, gen_time = self.generator.generate_with_blocks(
+                blocks,
+                max_tokens=max_tokens,
+            )
+        else:
+            prompt = format_rag_prompt(
+                prepared["query"],
+                prepared["retrieved_passages"],
+                tokenizer=self.generator.tokenizer,
+            )
+            generated_texts, gen_time = self.generator.generate(
+                prompt, max_tokens=max_tokens
+            )
+
+        timings = dict(prepared["timings"])
+        timings["generation"] = gen_time
+        timings["total"] = sum(timings.values())
+
+        return {
+            "query": prepared["query"],
+            "answer": generated_texts[0] if generated_texts else "",
+            "retrieved_passages": prepared["retrieved_passages"],
+            "retrieved_scores": prepared["retrieved_scores"],
+            "timings": timings,
+        }
+
+    def _cache_metadata(self) -> Dict[str, Any]:
+        """Return common cache metadata for results."""
+        return {
+            "tiered_kv_enabled": self.enable_tiered_kv,
+            "tiered_kv_cache": self.generator.get_tiered_cache_stats()
+            if self.enable_tiered_kv
+            else {},
+        }
+
+    def _result_from_payload(
+        self,
+        payload: Dict[str, Any],
+        top_k: int,
+        extra_metadata: Optional[Dict[str, Any]] = None,
+    ) -> RAGResult:
+        """Build a RAGResult from generated payload data."""
+        metadata = {
+            "top_k": top_k,
+            "model": self.config.model.llm_model_name,
+            **self._cache_metadata(),
+        }
+        if extra_metadata:
+            metadata.update(extra_metadata)
+
+        return RAGResult(
+            query=payload["query"],
+            answer=payload["answer"],
+            retrieved_passages=payload["retrieved_passages"],
+            retrieved_scores=payload["retrieved_scores"],
+            timings=payload["timings"],
+            metadata=metadata,
+        )
+
     def _load_corpus(self):
         """Load documents from corpus file into the index."""
         corpus_path = self.config.paths.corpus_path
@@ -238,138 +342,14 @@ class Pipeline:
             RAGResult with answer, passages, scores, and timings
         """
         top_k = top_k or self.config.retrieval.top_k
-        timings = {}
-
-        # Embedded retrieval + generation overlap
         if self.enable_overlap:
-            return self._query_overlapped(query, top_k, max_tokens)
-
-        # Sequential pipeline
-        # Step 1: Embed the query
-        start = time.perf_counter()
-        query_embedding, embed_time = self.embedder.encode([query])
-        timings["embedding"] = embed_time
-
-        # Step 2: Retrieve similar documents
-        start = time.perf_counter()
-        distances, indices, mapped_ids, search_time = self.retriever.search(
-            query_embedding, k=top_k
-        )
-        timings["retrieval"] = search_time
-
-        # Get the actual passages using the mapped IDs
-        flat_ids = [id_val for id_val in mapped_ids[0] if id_val != -1]
-        retrieved_passages = self.retriever.get_documents_by_ids(flat_ids)
-        retrieved_scores = distances[0].tolist()[: len(retrieved_passages)]
-
-        # Step 3: Generate response
-        start = time.perf_counter()
-
-        if self.enable_tiered_kv:
-            blocks = build_rag_blocks(
-                query,
-                retrieved_passages,
-                max_context_length=self.config.model.llm_max_model_len,
-            )
-            generated_texts, gen_time = self.generator.generate_with_blocks(
-                blocks,
-                max_tokens=max_tokens or self.config.model.max_tokens,
-            )
-        else:
-            prompt = format_rag_prompt(
-                query, retrieved_passages, tokenizer=self.generator.tokenizer
-            )
-            generated_texts, gen_time = self.generator.generate(
-                prompt, max_tokens=max_tokens or self.config.model.max_tokens
-            )
-        timings["generation"] = gen_time
-        timings["total"] = sum(timings.values())
-
-        cache_stats = (
-            self.generator.get_tiered_cache_stats() if self.enable_tiered_kv else {}
-        )
-
-        return RAGResult(
-            query=query,
-            answer=generated_texts[0] if generated_texts else "",
-            retrieved_passages=retrieved_passages,
-            retrieved_scores=retrieved_scores,
-            timings=timings,
-            metadata={
-                "top_k": top_k,
-                "model": self.config.model.llm_model_name,
-                "tiered_kv_enabled": self.enable_tiered_kv,
-                "tiered_kv_cache": cache_stats,
-            },
-        )
-
-    def _query_overlapped(
-        self,
-        query: str,
-        top_k: int,
-        max_tokens: Optional[int],
-    ) -> RAGResult:
-        """Query with retrieval-inference overlap using threading."""
-        import concurrent.futures
-        import threading
-
-        timings = {}
-        max_tokens = max_tokens or self.config.model.max_tokens
-
-        # Embed query (must be sequential)
-        start = time.perf_counter()
-        query_embedding, embed_time = self.embedder.encode([query])
-        timings["embedding"] = embed_time
-
-        # Retrieve (can overlap with generation)
-        def retrieve():
-            distances, indices, mapped_ids, _ = self.retriever.search(
-                query_embedding, k=top_k
-            )
-            flat_ids = [id_val for id_val in mapped_ids[0] if id_val != -1]
-            passages = self.retriever.get_documents_by_ids(flat_ids)
-            scores = distances[0].tolist()[: len(passages)]
-            return passages, scores
-
-        def generate(prompt):
-            generated_texts, gen_time = self.generator.generate(
-                prompt, max_tokens=max_tokens
-            )
-            return generated_texts, gen_time
-
-        # Execute retrieval and generation concurrently
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-            # Start retrieval
-            ret_future = executor.submit(retrieve)
-
-            # Wait a bit then start generation while retrieval runs
-            time.sleep(0.01)
-
-            # Get retrieval result
-            retrieved_passages, retrieved_scores = ret_future.result()
-
-            # Format prompt and generate (needs completion before we can generate)
-            prompt = format_rag_prompt(
-                query, retrieved_passages, tokenizer=self.generator.tokenizer
+            logger.info(
+                "Overlap mode only applies to multi-query workloads; using sequential path for single query"
             )
 
-            gen_start = time.perf_counter()
-            generated_texts, gen_time = self.generator.generate(
-                prompt, max_tokens=max_tokens
-            )
-            timings["generation"] = gen_time
-            timings["retrieval"] = timings.get("embedding", 0)  # Approximate overlap
-
-        timings["total"] = sum(timings.values())
-
-        return RAGResult(
-            query=query,
-            answer=generated_texts[0] if generated_texts else "",
-            retrieved_passages=retrieved_passages,
-            retrieved_scores=retrieved_scores,
-            timings=timings,
-            metadata={"top_k": top_k, "model": self.config.model.llm_model_name},
-        )
+        prepared = self._prepare_query(query, top_k)
+        payload = self._generate_prepared_query(prepared, max_tokens=max_tokens)
+        return self._result_from_payload(payload, top_k)
 
     def query_with_passages(
         self,
@@ -450,72 +430,83 @@ class Pipeline:
         Returns:
             List of RAGResults
         """
+        import concurrent.futures
         import torch
 
         top_k = top_k or self.config.retrieval.top_k
-        timings = {}
-
-        # Step 1: Embed all queries at once
-        start = time.perf_counter()
-        query_embeddings, embed_time = self.embedder.encode(queries)
-        timings["embedding"] = embed_time
+        batch_start = time.perf_counter()
+        query_embeddings, batch_embed_time = self.embedder.encode(queries)
 
         results = []
+        extra_metadata = {
+            "gpu_memory_gb": torch.cuda.memory_allocated() / (1024**3)
+            if torch.cuda.is_available()
+            else 0,
+        }
 
-        # Step 2 & 3: Retrieve and generate for each query
-        for i, query in enumerate(queries):
-            start = time.perf_counter()
-            distances, indices, mapped_ids, search_time = self.retriever.search(
-                query_embeddings[i : i + 1], k=top_k
+        if not self.enable_overlap:
+            for i, query in enumerate(queries):
+                prepared = self._prepare_query(
+                    query, top_k, query_embeddings=query_embeddings[i : i + 1]
+                )
+                prepared["timings"]["embedding"] = batch_embed_time / max(
+                    len(queries), 1
+                )
+                payload = self._generate_prepared_query(prepared)
+                results.append(
+                    self._result_from_payload(
+                        payload, top_k, extra_metadata=extra_metadata
+                    )
+                )
+            return results
+
+        if not queries:
+            return results
+
+        embed_share = batch_embed_time / len(queries)
+        overlap_wall_start = time.perf_counter()
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            next_future = executor.submit(
+                self._prepare_query,
+                queries[0],
+                top_k,
+                query_embeddings[0:1],
             )
-            timings["retrieval"] = search_time
 
-            flat_ids = [id_val for id_val in mapped_ids[0] if id_val != -1]
-            retrieved_passages = self.retriever.get_documents_by_ids(flat_ids)
-            retrieved_scores = distances[0].tolist()[: len(retrieved_passages)]
+            for i, query in enumerate(queries):
+                prepared = next_future.result()
+                prepared["timings"]["embedding"] = embed_share
 
-            start = time.perf_counter()
-            if self.enable_tiered_kv:
-                blocks = build_rag_blocks(
-                    query,
-                    retrieved_passages,
-                    max_context_length=self.config.model.llm_max_model_len,
-                )
-                generated_texts, gen_time = self.generator.generate_with_blocks(
-                    blocks, max_tokens=self.config.model.max_tokens
-                )
-            else:
-                prompt = format_rag_prompt(
-                    query, retrieved_passages, tokenizer=self.generator.tokenizer
-                )
-                generated_texts, gen_time = self.generator.generate(
-                    prompt, max_tokens=self.config.model.max_tokens
-                )
-            timings["generation"] = gen_time
-            timings["total"] = sum(timings.values())
+                if i + 1 < len(queries):
+                    next_future = executor.submit(
+                        self._prepare_query,
+                        queries[i + 1],
+                        top_k,
+                        query_embeddings[i + 1 : i + 2],
+                    )
+                else:
+                    next_future = None
 
-            cache_stats = (
-                self.generator.get_tiered_cache_stats() if self.enable_tiered_kv else {}
-            )
-
-            results.append(
-                RAGResult(
-                    query=query,
-                    answer=generated_texts[0] if generated_texts else "",
-                    retrieved_passages=retrieved_passages,
-                    retrieved_scores=retrieved_scores,
-                    timings=timings.copy(),
-                    metadata={
-                        "top_k": top_k,
-                        "model": self.config.model.llm_model_name,
-                        "gpu_memory_gb": torch.cuda.memory_allocated() / (1024**3)
-                        if torch.cuda.is_available()
-                        else 0,
-                        "tiered_kv_enabled": self.enable_tiered_kv,
-                        "tiered_kv_cache": cache_stats,
-                    },
+                payload = self._generate_prepared_query(prepared)
+                results.append(
+                    self._result_from_payload(
+                        payload,
+                        top_k,
+                        extra_metadata={
+                            **extra_metadata,
+                            "overlap_enabled": True,
+                        },
+                    )
                 )
-            )
+
+        overlap_wall_time = time.perf_counter() - overlap_wall_start
+        batch_wall_time = time.perf_counter() - batch_start
+        per_query_wall = overlap_wall_time / len(queries)
+        for result in results:
+            result.timings["wall_time"] = per_query_wall
+            result.metadata["overlap_wall_time"] = overlap_wall_time
+            result.metadata["batch_wall_time"] = batch_wall_time
 
         return results
 

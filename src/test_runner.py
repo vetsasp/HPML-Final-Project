@@ -101,18 +101,17 @@ def run_benchmark(
 
     # Benchmark runs
     logger.info(f"Running benchmark ({len(queries)} queries)...")
-    embed_times = []
-    retrieve_times = []
-    generate_times = []
-    total_times = []
+    run_start = time.perf_counter()
+    if enable_overlap:
+        results = pipeline.query_batch(queries)
+    else:
+        results = [pipeline.query(query) for query in queries]
+    wall_time_ms = (time.perf_counter() - run_start) * 1000
 
-    for query in queries:
-        result = pipeline.query(query)
-
-        embed_times.append(result.timings.get("embedding", 0) * 1000)
-        retrieve_times.append(result.timings.get("retrieval", 0) * 1000)
-        generate_times.append(result.timings.get("generation", 0) * 1000)
-        total_times.append(result.timings.get("total", 0) * 1000)
+    embed_times = [result.timings.get("embedding", 0) * 1000 for result in results]
+    retrieve_times = [result.timings.get("retrieval", 0) * 1000 for result in results]
+    generate_times = [result.timings.get("generation", 0) * 1000 for result in results]
+    total_times = [result.timings.get("total", 0) * 1000 for result in results]
 
     # Get GPU memory
     gpu_mem = 0.0
@@ -123,7 +122,7 @@ def run_benchmark(
     avg_embed = sum(embed_times) / len(embed_times)
     avg_retrieve = sum(retrieve_times) / len(retrieve_times)
     avg_generate = sum(generate_times) / len(generate_times)
-    avg_total = sum(total_times) / len(total_times)
+    avg_total = wall_time_ms / len(results)
 
     logger.info(
         f"Results: embed={avg_embed:.2f}ms, retrieve={avg_retrieve:.2f}ms, gen={avg_generate:.2f}ms, total={avg_total:.2f}ms"

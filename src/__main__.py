@@ -85,7 +85,7 @@ def setup_args() -> argparse.ArgumentParser:
         "--overlap",
         "-o",
         action="store_true",
-        help="Enable retrieval-inference overlap",
+        help="Enable multi-query retrieval-inference overlap for batch workloads",
     )
 
     parser.add_argument(
