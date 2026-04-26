@@ -44,6 +44,7 @@ class BenchmarkResult:
     generate_time_ms: float
     total_time_ms: float
     gpu_memory_gb: float
+    speedup_pct: float = 0.0
 
 
 def get_test_queries() -> List[str]:
@@ -141,11 +142,19 @@ def run_benchmark(
 
 def print_table(results: List[BenchmarkResult]):
     """Print results in table format."""
+    if results:
+        baseline_total = results[0].total_time_ms
+        for result in results:
+            if baseline_total > 0:
+                result.speedup_pct = (
+                    (baseline_total - result.total_time_ms) / baseline_total
+                ) * 100
+
     print("\n" + "=" * 100)
     print("BENCHMARK RESULTS")
     print("=" * 100)
     print(
-        f"{'Flags':<20} | {'Embed (ms)':<12} | {'Retrieve (ms)':<14} | {'Generate (ms)':<14} | {'Total (ms)':<12} | {'GPU Mem (GB)':<12}"
+        f"{'Flags':<20} | {'Embed (ms)':<12} | {'Retrieve (ms)':<14} | {'Generate (ms)':<14} | {'Total (ms)':<12} | {'Speedup %':<10} | {'GPU Mem (GB)':<12}"
     )
     print("-" * 100)
 
@@ -156,6 +165,7 @@ def print_table(results: List[BenchmarkResult]):
             f"{r.retrieve_time_ms:<14.4f} | "
             f"{r.generate_time_ms:<14.2f} | "
             f"{r.total_time_ms:<12.2f} | "
+            f"{r.speedup_pct:<10.2f} | "
             f"{r.gpu_memory_gb:<12.2f}"
         )
 
