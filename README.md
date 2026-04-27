@@ -17,3 +17,6 @@ To run with a prompt:
 
 To run interactively:
 `uv run src`
+
+To run all tests:
+`uv run -m src.test_runner`
