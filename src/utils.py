@@ -4,14 +4,13 @@ Provides timing, logging, and memory tracking helpers.
 """
 
 import functools
+import importlib
 import logging
 import os
+import sys
 import time
 from contextlib import contextmanager
 from typing import Any, Callable
-
-import psutil
-import torch
 
 
 def setup_logging(level: int = logging.INFO) -> logging.Logger:
@@ -97,6 +96,8 @@ def get_memory_usage() -> dict:
     Returns:
         Dictionary with memory usage info
     """
+    import psutil
+
     process = psutil.Process(os.getpid())
     memory_info = process.memory_info()
 
@@ -107,6 +108,8 @@ def get_memory_usage() -> dict:
     }
 
     # Add GPU memory if available
+    import torch
+
     if torch.cuda.is_available():
         stats.update(
             {
@@ -142,6 +145,8 @@ def log_memory_usage(label: str = ""):
 
 def reset_peak_memory_stats():
     """Reset peak memory statistics (for GPU and CPU if supported)."""
+    import torch
+
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
     # Note: psutil doesn't have direct equivalent for CPU peak reset
@@ -158,9 +163,9 @@ def format_time(seconds: float) -> str:
         Formatted time string
     """
     if seconds < 1e-3:
-        return f"{seconds*1e6:.2f}µs"
+        return f"{seconds * 1e6:.2f}µs"
     elif seconds < 1:
-        return f"{seconds*1e3:.2f}ms"
+        return f"{seconds * 1e3:.2f}ms"
     elif seconds < 60:
         return f"{seconds:.2f}s"
     else:
@@ -188,31 +193,46 @@ class AverageMeter:
         self.avg = self.sum / self.count if self.count != 0 else 0
 
 
+def check_dependencies() -> int:
+    """Check whether the main runtime dependencies are importable."""
+    dependencies = [
+        ("dotenv", "python-dotenv"),
+        ("numpy", "numpy"),
+        ("psutil", "psutil"),
+        ("torch", "torch"),
+        ("sentence_transformers", "sentence-transformers"),
+        ("faiss", "faiss-cpu/faiss-gpu"),
+        ("vllm", "vllm"),
+    ]
+
+    print("Dependency Check")
+    print("=" * 60)
+
+    missing = []
+    for module_name, package_name in dependencies:
+        try:
+            module = importlib.import_module(module_name)
+            details = ""
+            if module_name == "torch":
+                cuda_available = getattr(module.cuda, "is_available", lambda: False)()
+                details = f" (version={module.__version__}, cuda={cuda_available})"
+            elif hasattr(module, "__version__"):
+                details = f" (version={module.__version__})"
+            print(f"OK       {package_name}{details}")
+        except Exception as exc:
+            missing.append(package_name)
+            print(f"MISSING  {package_name} ({exc})")
+
+    print("=" * 60)
+    if missing:
+        print("Missing dependencies detected:")
+        for package_name in missing:
+            print(f"- {package_name}")
+        return 1
+
+    print("All checked dependencies imported successfully.")
+    return 0
+
+
 if __name__ == "__main__":
-    # Simple test when run directly
-    logger = setup_logging(logging.DEBUG)
-    logger.info("Testing utils module")
-
-    # Test timing decorator
-    @timing_decorator
-    def test_func():
-        time.sleep(0.1)
-        return "done"
-
-    result, elapsed = test_func()
-    logger.info(f"Function result: {result}, time: {elapsed:.4f}s")
-
-    # Test context manager
-    with timer("Test operation"):
-        time.sleep(0.05)
-
-    # Test memory logging
-    log_memory_usage("After test")
-
-    # Test AverageMeter
-    meter = AverageMeter()
-    meter.update(10)
-    meter.update(20)
-    logger.info(f"Average meter: {meter.avg}")
-
-    logger.info("Utils test completed")
+    sys.exit(check_dependencies())
