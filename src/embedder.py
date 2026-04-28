@@ -11,14 +11,11 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 
-# Add the parent directory to sys.path to allow imports when run directly
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-# Try relative imports first (when used as package), fall back to absolute (when run directly)
 try:
     from . import config, utils
 
@@ -62,7 +59,7 @@ class Embedder:
         # Load the model
         self.model = SentenceTransformer(self.model_name, device=self.device)
 
-        # Set max sequence length if specified in config
+        # Set max sequence length
         if hasattr(self.config.model, "max_seq_length"):
             self.model.max_seq_length = self.config.model.max_seq_length
 

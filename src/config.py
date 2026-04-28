@@ -26,7 +26,7 @@ class ModelConfig:
     max_seq_length: int = 256
 
     # Language model selection
-    # NOTE: Using a smaller model for testing on local machine
+    # NOTE: Use the smaller model for testing on local machine only
     # llm_model_name: str = "mistralai/Mistral-7B-v0.1"
     llm_model_name: str = "Qwen/Qwen2-0.5B-Instruct"
 

@@ -13,10 +13,8 @@ import faiss
 import numpy as np
 import torch
 
-# Add the parent directory to sys.path to allow imports when run directly
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-# Try relative imports first (when used as package), fall back to absolute (when run directly)
 try:
     from . import config, embedder, utils
 
@@ -89,7 +87,7 @@ class Retriever:
             Initialized FAISS index
         """
         if index_type == "IndexFlatIP":
-            # Inner product (equivalent to cosine similarity for L2-normalized vectors)
+            # Inner product
             index = faiss.IndexFlatIP(dim)
         elif index_type == "IndexFlatL2":
             # L2 distance
@@ -137,7 +135,7 @@ class Retriever:
             logger.warning("Attempted to add empty embeddings array")
             return []
 
-        # Ensure embeddings are float32 (FAISS requirement)
+        # Ensure embeddings are float32
         if embeddings.dtype != np.float32:
             embeddings = embeddings.astype(np.float32)
 
@@ -249,21 +247,21 @@ class Retriever:
     def remove_ids(self, ids_to_remove: List[int]) -> bool:
         """
         Remove specific IDs from the index.
-        Note: This is inefficient for most index types as it requires rebuilding.
+        This is inefficient for most index types as it requires rebuilding.
 
         Args:
             ids_to_remove: List of IDs to remove
 
         Returns:
             True if removal was attempted
+
+        NOTE: This function is not implemented. This is for efficiency only, as
+        this is a small pipeline that doesn't need to handle large amounts of data.
+        For production systems, you would implement something like this.
         """
         logger.warning(
             "Removing specific IDs requires index rebuild - not implemented for efficiency"
         )
-        # For production systems, you would either:
-        # 1. Use an index that supports removal (like IndexIDMap)
-        # 2. Mark items as deleted and filter during search
-        # 3. Periodically rebuild the index
         return False
 
     def get_index_stats(self) -> dict:
@@ -349,7 +347,9 @@ def test_retriever():
 
     # Search for similar vectors
     logger.info("Performing search...")
-    distances, indices, mapped_ids, search_time = retriever.search(query_embeddings, k=5)
+    distances, indices, mapped_ids, search_time = retriever.search(
+        query_embeddings, k=5
+    )
 
     logger.info(f"Query shape: {query_embeddings.shape}")
     logger.info(f"Distances shape: {distances.shape}")
@@ -386,4 +386,3 @@ def test_retriever():
 
 if __name__ == "__main__":
     test_retriever()
-

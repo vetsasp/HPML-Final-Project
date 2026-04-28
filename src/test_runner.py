@@ -18,16 +18,16 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 try:
     from . import config, utils
     from .embedder import Embedder
-    from .retriever import Retriever
     from .generator import Generator, format_rag_prompt
     from .pipeline import Pipeline, RAGResult
+    from .retriever import Retriever
 except ImportError:
     import config
     import utils
     from embedder import Embedder
-    from retriever import Retriever
     from generator import Generator, format_rag_prompt
     from pipeline import Pipeline, RAGResult
+    from retriever import Retriever
 
 
 logger = logging.getLogger("rag_benchmark")
@@ -206,7 +206,7 @@ def main():
     # Overlap only (retrieval-inference overlap)
     results.append(run_benchmark(queries, enable_kv_reuse=False, enable_overlap=True))
 
-    # Quantization (try fp8 - most widely supported)
+    # Quantization
     results.append(run_benchmark(queries, enable_kv_reuse=False, quantization="fp8"))
 
     # KV + quantization

@@ -216,4 +216,3 @@ if __name__ == "__main__":
     logger.info(f"Average meter: {meter.avg}")
 
     logger.info("Utils test completed")
-

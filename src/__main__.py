@@ -25,7 +25,11 @@ except ImportError:
 
 
 def setup_args() -> argparse.ArgumentParser:
-    """Set up command line arguments."""
+    """
+    Set up command line arguments.
+    Optimizations are enabled optionally via arguments to
+    make testing various combinations easier.
+    """
     parser = argparse.ArgumentParser(
         description="RAG Pipeline - Retrieval-Augmented Generation"
     )

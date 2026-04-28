@@ -7,34 +7,31 @@ import logging
 import os
 import sys
 import time
-from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-
 from dotenv import load_dotenv
 
-# Add the parent directory to sys.path to allow imports when run directly
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-# Try relative imports first (when used as package), fall back to absolute (when run directly)
 try:
     from . import config, utils
     from .embedder import Embedder
-    from .retriever import Retriever, create_sample_data
     from .generator import Generator, format_rag_prompt
     from .kv_cache_manager import TieredKVManager
     from .prompt_blocks import build_rag_blocks
+    from .retriever import Retriever, create_sample_data
 
     logger = logging.getLogger("rag_pipeline")
 except ImportError:
     import config
     import utils
     from embedder import Embedder
-    from retriever import Retriever, create_sample_data
     from generator import Generator, format_rag_prompt
     from kv_cache_manager import TieredKVManager
     from prompt_blocks import build_rag_blocks
+    from retriever import Retriever, create_sample_data
 
     logger = utils.setup_logging(logging.INFO)
 
@@ -200,9 +197,9 @@ class Pipeline:
         """Return common cache metadata for results."""
         return {
             "tiered_kv_enabled": self.enable_tiered_kv,
-            "tiered_kv_cache": self.generator.get_tiered_cache_stats()
-            if self.enable_tiered_kv
-            else {},
+            "tiered_kv_cache": (
+                self.generator.get_tiered_cache_stats() if self.enable_tiered_kv else {}
+            ),
         }
 
     def _result_from_payload(
@@ -431,6 +428,7 @@ class Pipeline:
             List of RAGResults
         """
         import concurrent.futures
+
         import torch
 
         top_k = top_k or self.config.retrieval.top_k
@@ -439,9 +437,11 @@ class Pipeline:
 
         results = []
         extra_metadata = {
-            "gpu_memory_gb": torch.cuda.memory_allocated() / (1024**3)
-            if torch.cuda.is_available()
-            else 0,
+            "gpu_memory_gb": (
+                torch.cuda.memory_allocated() / (1024**3)
+                if torch.cuda.is_available()
+                else 0
+            ),
         }
 
         if not self.enable_overlap:

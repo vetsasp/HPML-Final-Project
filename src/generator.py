@@ -120,7 +120,7 @@ class Generator:
 
             self.SamplingParams = SamplingParams
         except ImportError:
-            logger.error("vLLM not installed. Install with: uv pip install vllm")
+            logger.error("vLLM not installed. Install with: uv install vllm")
             sys.exit(1)
 
         try:
