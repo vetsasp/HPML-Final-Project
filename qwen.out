@@ -1,0 +1,278 @@
+=======================================
+running tests...
+2026-04-29 13:03:44,958 - rag_pipeline - INFO - Initializing RAG Pipeline
+2026-04-29 13:03:44,958 - rag_pipeline - INFO - Enable KV reuse: False
+2026-04-29 13:03:44,958 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:03:44,958 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:03:44,958 - rag_pipeline - INFO - Enable overlap: False
+2026-04-29 13:03:44,958 - rag_pipeline - INFO - Enable tiered KV: False
+2026-04-29 13:03:44,958 - rag_pipeline - INFO - Initializing Embedder...
+2026-04-29 13:03:44,958 - rag_pipeline - INFO - Loading embedding model: all-MiniLM-L6-v2
+2026-04-29 13:03:44,958 - rag_pipeline - INFO - Using device: cuda
+/scratch/pmv264/proj/src/../src/embedder.py:66: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  self.embedding_dim = self.model.get_sentence_embedding_dimension()
+2026-04-29 13:03:48,029 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:03:49,427 - rag_pipeline - INFO - Initializing Retriever...
+2026-04-29 13:03:49,427 - rag_pipeline - INFO - Initializing FAISS index: IndexFlatIP
+2026-04-29 13:03:49,427 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:03:49,427 - rag_pipeline - INFO - Device: cuda
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - Retriever initialized. Index is trained: False
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - Initializing Generator...
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - Initializing Generator with model: Qwen/Qwen2-0.5B-Instruct
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - Max model length: 2048
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - GPU memory utilization: 0.8
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - KV cache reuse: False
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - Tiered KV cache: False
+2026-04-29 13:03:49,436 - rag_pipeline - INFO - GPU: NVIDIA L4 (22.0 GB)
+2026-04-29 13:04:09,395 - rag_pipeline - INFO - Initializing vLLM engine...
+(EngineCore pid=5701) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=5701) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:08<00:00,  8.90s/it]
+(EngineCore pid=5701) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:08<00:00,  8.90s/it]
+(EngineCore pid=5701) 
+2026-04-29 13:05:06,552 - rag_pipeline - INFO - vLLM engine initialized successfully
+2026-04-29 13:05:06,564 - rag_pipeline - INFO - Loading 16 documents from /scratch/pmv264/proj/src/../data/corpus.jsonl
+2026-04-29 13:05:06,564 - rag_pipeline - INFO - Adding 16 documents to index
+2026-04-29 13:05:06,634 - rag_pipeline - INFO - Added 16 documents to index
+2026-04-29 13:05:06,635 - rag_pipeline - INFO - Indexed 16 documents
+2026-04-29 13:05:06,635 - rag_pipeline - INFO - Pipeline initialized successfully
+2026-04-29 13:05:20,412 - rag_pipeline - INFO - Initializing RAG Pipeline
+2026-04-29 13:05:20,412 - rag_pipeline - INFO - Enable KV reuse: True
+2026-04-29 13:05:20,412 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:05:20,412 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:05:20,412 - rag_pipeline - INFO - Enable overlap: False
+2026-04-29 13:05:20,412 - rag_pipeline - INFO - Enable tiered KV: False
+2026-04-29 13:05:20,412 - rag_pipeline - INFO - Initializing Embedder...
+2026-04-29 13:05:20,412 - rag_pipeline - INFO - Loading embedding model: all-MiniLM-L6-v2
+2026-04-29 13:05:20,412 - rag_pipeline - INFO - Using device: cuda
+/scratch/pmv264/proj/src/../src/embedder.py:66: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  self.embedding_dim = self.model.get_sentence_embedding_dimension()
+2026-04-29 13:05:21,818 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Initializing Retriever...
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Initializing FAISS index: IndexFlatIP
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Device: cuda
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Retriever initialized. Index is trained: False
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Initializing Generator...
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Initializing Generator with model: Qwen/Qwen2-0.5B-Instruct
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Max model length: 2048
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - GPU memory utilization: 0.8
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - KV cache reuse: True
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Tiered KV cache: False
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - GPU: NVIDIA L4 (22.0 GB)
+2026-04-29 13:05:21,826 - rag_pipeline - INFO - Initializing vLLM engine...
+(EngineCore pid=5862) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=5862) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.29it/s]
+(EngineCore pid=5862) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.28it/s]
+(EngineCore pid=5862) 
+2026-04-29 13:05:51,466 - rag_pipeline - INFO - vLLM engine initialized successfully
+2026-04-29 13:05:51,468 - rag_pipeline - INFO - Loading 16 documents from /scratch/pmv264/proj/src/../data/corpus.jsonl
+2026-04-29 13:05:51,468 - rag_pipeline - INFO - Adding 16 documents to index
+2026-04-29 13:05:51,479 - rag_pipeline - INFO - Added 16 documents to index
+2026-04-29 13:05:51,479 - rag_pipeline - INFO - Indexed 16 documents
+2026-04-29 13:05:51,479 - rag_pipeline - INFO - Pipeline initialized successfully
+2026-04-29 13:05:59,241 - rag_pipeline - INFO - Initializing RAG Pipeline
+2026-04-29 13:05:59,242 - rag_pipeline - INFO - Enable KV reuse: False
+2026-04-29 13:05:59,242 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:05:59,242 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:05:59,242 - rag_pipeline - INFO - Enable overlap: False
+2026-04-29 13:05:59,242 - rag_pipeline - INFO - Enable tiered KV: True
+2026-04-29 13:05:59,242 - rag_pipeline - INFO - Initializing Embedder...
+2026-04-29 13:05:59,242 - rag_pipeline - INFO - Loading embedding model: all-MiniLM-L6-v2
+2026-04-29 13:05:59,242 - rag_pipeline - INFO - Using device: cuda
+/scratch/pmv264/proj/src/../src/embedder.py:66: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  self.embedding_dim = self.model.get_sentence_embedding_dimension()
+2026-04-29 13:06:00,612 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Initializing Retriever...
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Initializing FAISS index: IndexFlatIP
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Device: cuda
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Retriever initialized. Index is trained: False
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Initializing Generator...
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Initializing Generator with model: Qwen/Qwen2-0.5B-Instruct
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Max model length: 2048
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - GPU memory utilization: 0.8
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - KV cache reuse: False
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Tiered KV cache: True
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - GPU: NVIDIA L4 (22.0 GB)
+2026-04-29 13:06:00,620 - rag_pipeline - INFO - Initializing vLLM engine...
+(EngineCore pid=6008) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=6008) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.25it/s]
+(EngineCore pid=6008) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.24it/s]
+(EngineCore pid=6008) 
+2026-04-29 13:06:29,638 - rag_pipeline - INFO - vLLM engine initialized successfully
+2026-04-29 13:06:29,641 - rag_pipeline - INFO - Loading 16 documents from /scratch/pmv264/proj/src/../data/corpus.jsonl
+2026-04-29 13:06:29,641 - rag_pipeline - INFO - Adding 16 documents to index
+2026-04-29 13:06:29,660 - rag_pipeline - INFO - Added 16 documents to index
+2026-04-29 13:06:29,660 - rag_pipeline - INFO - Indexed 16 documents
+2026-04-29 13:06:29,660 - rag_pipeline - INFO - Pipeline initialized successfully
+2026-04-29 13:06:37,196 - rag_pipeline - INFO - Initializing RAG Pipeline
+2026-04-29 13:06:37,197 - rag_pipeline - INFO - Enable KV reuse: True
+2026-04-29 13:06:37,197 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:06:37,197 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:06:37,197 - rag_pipeline - INFO - Enable overlap: False
+2026-04-29 13:06:37,197 - rag_pipeline - INFO - Enable tiered KV: True
+2026-04-29 13:06:37,197 - rag_pipeline - INFO - Initializing Embedder...
+2026-04-29 13:06:37,197 - rag_pipeline - INFO - Loading embedding model: all-MiniLM-L6-v2
+2026-04-29 13:06:37,197 - rag_pipeline - INFO - Using device: cuda
+/scratch/pmv264/proj/src/../src/embedder.py:66: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  self.embedding_dim = self.model.get_sentence_embedding_dimension()
+2026-04-29 13:06:38,590 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Initializing Retriever...
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Initializing FAISS index: IndexFlatIP
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Device: cuda
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Retriever initialized. Index is trained: False
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Initializing Generator...
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Initializing Generator with model: Qwen/Qwen2-0.5B-Instruct
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Max model length: 2048
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - GPU memory utilization: 0.8
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - KV cache reuse: True
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:06:38,597 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:06:38,598 - rag_pipeline - INFO - Tiered KV cache: True
+2026-04-29 13:06:38,598 - rag_pipeline - INFO - GPU: NVIDIA L4 (22.0 GB)
+2026-04-29 13:06:38,598 - rag_pipeline - INFO - Initializing vLLM engine...
+(EngineCore pid=6142) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=6142) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.24it/s]
+(EngineCore pid=6142) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.24it/s]
+(EngineCore pid=6142) 
+2026-04-29 13:07:03,976 - rag_pipeline - INFO - vLLM engine initialized successfully
+2026-04-29 13:07:03,977 - rag_pipeline - INFO - Loading 16 documents from /scratch/pmv264/proj/src/../data/corpus.jsonl
+2026-04-29 13:07:03,977 - rag_pipeline - INFO - Adding 16 documents to index
+2026-04-29 13:07:03,990 - rag_pipeline - INFO - Added 16 documents to index
+2026-04-29 13:07:03,990 - rag_pipeline - INFO - Indexed 16 documents
+2026-04-29 13:07:03,990 - rag_pipeline - INFO - Pipeline initialized successfully
+2026-04-29 13:07:11,583 - rag_pipeline - INFO - Initializing RAG Pipeline
+2026-04-29 13:07:11,583 - rag_pipeline - INFO - Enable KV reuse: False
+2026-04-29 13:07:11,583 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:07:11,583 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:07:11,583 - rag_pipeline - INFO - Enable overlap: True
+2026-04-29 13:07:11,583 - rag_pipeline - INFO - Enable tiered KV: False
+2026-04-29 13:07:11,583 - rag_pipeline - INFO - Initializing Embedder...
+2026-04-29 13:07:11,583 - rag_pipeline - INFO - Loading embedding model: all-MiniLM-L6-v2
+2026-04-29 13:07:11,583 - rag_pipeline - INFO - Using device: cuda
+/scratch/pmv264/proj/src/../src/embedder.py:66: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  self.embedding_dim = self.model.get_sentence_embedding_dimension()
+2026-04-29 13:07:12,901 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Initializing Retriever...
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Initializing FAISS index: IndexFlatIP
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Device: cuda
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Retriever initialized. Index is trained: False
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Initializing Generator...
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Initializing Generator with model: Qwen/Qwen2-0.5B-Instruct
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Max model length: 2048
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - GPU memory utilization: 0.8
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - KV cache reuse: False
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Quantization: None
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Tiered KV cache: False
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - GPU: NVIDIA L4 (22.0 GB)
+2026-04-29 13:07:12,908 - rag_pipeline - INFO - Initializing vLLM engine...
+(EngineCore pid=6283) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=6283) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.29it/s]
+(EngineCore pid=6283) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.29it/s]
+(EngineCore pid=6283) 
+2026-04-29 13:07:40,908 - rag_pipeline - INFO - vLLM engine initialized successfully
+2026-04-29 13:07:40,911 - rag_pipeline - INFO - Loading 16 documents from /scratch/pmv264/proj/src/../data/corpus.jsonl
+2026-04-29 13:07:40,911 - rag_pipeline - INFO - Adding 16 documents to index
+2026-04-29 13:07:40,923 - rag_pipeline - INFO - Added 16 documents to index
+2026-04-29 13:07:40,923 - rag_pipeline - INFO - Indexed 16 documents
+2026-04-29 13:07:40,923 - rag_pipeline - INFO - Pipeline initialized successfully
+2026-04-29 13:07:40,923 - rag_pipeline - INFO - Overlap mode only applies to multi-query workloads; using sequential path for single query
+2026-04-29 13:07:42,085 - rag_pipeline - INFO - Overlap mode only applies to multi-query workloads; using sequential path for single query
+2026-04-29 13:07:48,276 - rag_pipeline - INFO - Initializing RAG Pipeline
+2026-04-29 13:07:48,276 - rag_pipeline - INFO - Enable KV reuse: False
+2026-04-29 13:07:48,276 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:07:48,276 - rag_pipeline - INFO - Quantization: fp8
+2026-04-29 13:07:48,276 - rag_pipeline - INFO - Enable overlap: False
+2026-04-29 13:07:48,276 - rag_pipeline - INFO - Enable tiered KV: False
+2026-04-29 13:07:48,276 - rag_pipeline - INFO - Initializing Embedder...
+2026-04-29 13:07:48,276 - rag_pipeline - INFO - Loading embedding model: all-MiniLM-L6-v2
+2026-04-29 13:07:48,276 - rag_pipeline - INFO - Using device: cuda
+/scratch/pmv264/proj/src/../src/embedder.py:66: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  self.embedding_dim = self.model.get_sentence_embedding_dimension()
+2026-04-29 13:07:49,599 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Initializing Retriever...
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Initializing FAISS index: IndexFlatIP
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Device: cuda
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Retriever initialized. Index is trained: False
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Initializing Generator...
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Initializing Generator with model: Qwen/Qwen2-0.5B-Instruct
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Max model length: 2048
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - GPU memory utilization: 0.8
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - KV cache reuse: False
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Quantization: fp8
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Tiered KV cache: False
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - GPU: NVIDIA L4 (22.0 GB)
+2026-04-29 13:07:49,607 - rag_pipeline - INFO - Initializing vLLM engine...
+(EngineCore pid=6428) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=6428) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.43it/s]
+(EngineCore pid=6428) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.43it/s]
+(EngineCore pid=6428) 
+2026-04-29 13:08:18,210 - rag_pipeline - INFO - vLLM engine initialized successfully
+2026-04-29 13:08:18,212 - rag_pipeline - INFO - Loading 16 documents from /scratch/pmv264/proj/src/../data/corpus.jsonl
+2026-04-29 13:08:18,212 - rag_pipeline - INFO - Adding 16 documents to index
+2026-04-29 13:08:18,229 - rag_pipeline - INFO - Added 16 documents to index
+2026-04-29 13:08:18,229 - rag_pipeline - INFO - Indexed 16 documents
+2026-04-29 13:08:18,229 - rag_pipeline - INFO - Pipeline initialized successfully
+2026-04-29 13:09:35,189 - rag_pipeline - INFO - Initializing RAG Pipeline
+2026-04-29 13:09:35,190 - rag_pipeline - INFO - Enable KV reuse: True
+2026-04-29 13:09:35,191 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:09:35,191 - rag_pipeline - INFO - Quantization: fp8
+2026-04-29 13:09:35,191 - rag_pipeline - INFO - Enable overlap: False
+2026-04-29 13:09:35,191 - rag_pipeline - INFO - Enable tiered KV: False
+2026-04-29 13:09:35,191 - rag_pipeline - INFO - Initializing Embedder...
+2026-04-29 13:09:35,191 - rag_pipeline - INFO - Loading embedding model: all-MiniLM-L6-v2
+2026-04-29 13:09:35,191 - rag_pipeline - INFO - Using device: cuda
+/scratch/pmv264/proj/src/../src/embedder.py:66: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  self.embedding_dim = self.model.get_sentence_embedding_dimension()
+2026-04-29 13:09:36,682 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:09:36,689 - rag_pipeline - INFO - Initializing Retriever...
+2026-04-29 13:09:36,689 - rag_pipeline - INFO - Initializing FAISS index: IndexFlatIP
+2026-04-29 13:09:36,689 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - Device: cuda
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - Retriever initialized. Index is trained: False
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - Initializing Generator...
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - Initializing Generator with model: Qwen/Qwen2-0.5B-Instruct
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - Max model length: 2048
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - GPU memory utilization: 0.8
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - KV cache reuse: True
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - Quantization: fp8
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - Tiered KV cache: False
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - GPU: NVIDIA L4 (22.0 GB)
+2026-04-29 13:09:36,690 - rag_pipeline - INFO - Initializing vLLM engine...
+(EngineCore pid=6615) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=6615) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.61it/s]
+(EngineCore pid=6615) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.61it/s]
+(EngineCore pid=6615) 
+2026-04-29 13:10:07,070 - rag_pipeline - INFO - vLLM engine initialized successfully
+2026-04-29 13:10:07,071 - rag_pipeline - INFO - Loading 16 documents from /scratch/pmv264/proj/src/../data/corpus.jsonl
+2026-04-29 13:10:07,071 - rag_pipeline - INFO - Adding 16 documents to index
+2026-04-29 13:10:07,083 - rag_pipeline - INFO - Added 16 documents to index
+2026-04-29 13:10:07,083 - rag_pipeline - INFO - Indexed 16 documents
+2026-04-29 13:10:07,083 - rag_pipeline - INFO - Pipeline initialized successfully
+
+====================================================================================================
+BENCHMARK RESULTS
+====================================================================================================
+Flags                | Embed (ms)   | Retrieve (ms)  | Generate (ms)  | Total (ms)   | Speedup %  | GPU Mem (GB)
+----------------------------------------------------------------------------------------------------
+baseline             | 7.32         | 0.0477         | 1142.73        | 1150.36      | 0.00       | 0.09        
+kv                   | 7.30         | 0.0380         | 981.51         | 989.08       | 14.02      | 0.18        
+tiered               | 7.19         | 0.0383         | 973.55         | 991.70       | 13.79      | 0.18        
+kv+tiered            | 7.12         | 0.0379         | 993.75         | 1010.23      | 12.18      | 0.26        
+overlap              | 3.27         | 0.0529         | 973.49         | 977.23       | 15.05      | 0.35        
+q=fp8                | 7.26         | 0.0412         | 10884.51       | 10892.05     | -846.84    | 0.26        
+kv+q=fp8             | 7.07         | 0.0425         | 10973.09       | 10980.42     | -854.52    | 0.35        
+====================================================================================================
+tests complete.

@@ -14,14 +14,20 @@
 module purge
 
 /share/apps/images/run-cuda-12.2.2.bash bash -c '
-# conda activate py311
 source .venv/bin/activate
 
 python --version
 
-./uv pip install -r requirements.txt
+./uv sync
 
-echo "running tests..."
-uv python -m src.test_runner
-echo "tests complete."
+echo "running benchmark..."
+./uv run python -m src.test_runner
+
+echo "running quality evaluation..."
+./uv run python -m src.eval_quality
+
+echo "plotting results..."
+./uv run python -m src.plot_results
+
+echo "all runs complete."
 '

@@ -21,6 +21,8 @@ AGENTS.md
 *.md
 *.txt
 !README*
+*.pptx
+*.pdf
 
 # Models, too heavy for github
 models/
