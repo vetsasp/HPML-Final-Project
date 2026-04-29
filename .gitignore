@@ -24,3 +24,6 @@ AGENTS.md
 
 # Models, too heavy for github
 models/
+
+# Claude Code internals
+.claude/
