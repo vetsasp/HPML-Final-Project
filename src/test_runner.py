@@ -7,6 +7,8 @@ import logging
 import os
 import sys
 import time
+import json
+from dataclasses import asdict
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -45,6 +47,28 @@ class BenchmarkResult:
     total_time_ms: float
     gpu_memory_gb: float
     speedup_pct: float = 0.0
+
+
+def save_results_json(
+    results: List[BenchmarkResult], output_path: str = "benchmark_results.json"
+):
+    """Save benchmark results in the plotting script's expected JSON format."""
+    payload = {
+        "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None",
+        "model": config.config.model.llm_model_name,
+        "results": [],
+    }
+
+    for result in results:
+        row = asdict(result)
+        row["ttft_ms"] = 0.0
+        row["tpot_ms"] = 0.0
+        payload["results"].append(row)
+
+    with open(output_path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+
+    logger.info(f"Saved benchmark results to {output_path}")
 
 
 def get_test_queries() -> List[str]:
@@ -214,6 +238,7 @@ def main():
 
     # Print table
     print_table(results)
+    save_results_json(results)
 
     logger.info("\nBenchmark complete!")
 
