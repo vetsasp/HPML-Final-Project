@@ -112,7 +112,7 @@ def render_blocks_to_prompt(blocks: List[PromptBlock], tokenizer=None) -> str:
     system_prompt = system_blocks[-1] if system_blocks else SYSTEM_PROMPT
     context = "\n\n".join(passage_blocks)
 
-    if tokenizer is not None:
+    if tokenizer is not None and getattr(tokenizer, "chat_template", None):
         messages = [
             {"role": "system", "content": system_prompt},
             {

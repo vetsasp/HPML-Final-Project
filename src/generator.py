@@ -300,7 +300,7 @@ def format_rag_prompt(
 
     context = "\n\n".join(valid_passages)
 
-    if tokenizer is not None:
+    if tokenizer is not None and getattr(tokenizer, "chat_template", None):
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {
