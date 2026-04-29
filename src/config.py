@@ -30,7 +30,7 @@ class ModelConfig:
     # llm_model_name: str = "mistralai/Mistral-7B-v0.1"
     llm_model_name: str = "Qwen/Qwen2-0.5B-Instruct"
 
-    llm_max_model_len: int = 2048
+    llm_max_model_len: int = 4096
     llm_tensor_parallel_size: int = 1
     llm_gpu_memory_utilization: float = 0.8
 
@@ -58,7 +58,7 @@ class TieredKVConfig:
 class RetrievalConfig:
     """Retrieval configuration settings."""
 
-    top_k: int = 5
+    top_k: int = 3
     faiss_index_type: str = (
         "IndexFlatIP"  # Inner product for cosine similarity after L2 norm
     )
@@ -76,7 +76,7 @@ class PathsConfig:
     cache_dir: Path = base_dir / "cache"
 
     # Data files
-    corpus_path: Path = data_dir / "corpus.jsonl"
+    corpus_path: Path = data_dir / "stm32l4-corpus.jsonl"
     queries_path: Path = data_dir / "queries.jsonl"
     qrels_path: Path = data_dir / "qrels.jsonl"
 

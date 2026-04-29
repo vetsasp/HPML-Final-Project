@@ -1,0 +1,16 @@
+Initializing RAG Pipeline...
+
+============================================================
+Query: does the device have any leds?
+============================================================
+
+Answer:
+Yes, the device has LEDs as it is a STM32L4 Discovery kit that supports LED lights.
+
+Timings:
+  embedding: 2.45ms
+  retrieval: 0.04ms
+  generation: 242.33ms
+  total: 244.83ms
+============================================================
+

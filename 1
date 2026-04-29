@@ -1,0 +1,76 @@
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Initializing RAG Pipeline
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Enable KV reuse: False
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Initializing RAG Pipeline
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Enable KV reuse: False
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Quantization: None
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Enable overlap: False
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Enable tiered KV: False
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Initializing Embedder...
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Quantization: None
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Enable overlap: False
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Enable tiered KV: False
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Initializing Embedder...
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Loading embedding model: all-MiniLM-L6-v2
+2026-04-29 11:10:49,632 - rag_pipeline - INFO - Loading embedding model: all-MiniLM-L6-v2
+2026-04-29 11:10:49,633 - rag_pipeline - INFO - Using device: cuda
+2026-04-29 11:10:49,633 - rag_pipeline - INFO - Using device: cuda
+/home/philip/uni/hpml/proj/src/../src/../src/embedder.py:66: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  self.embedding_dim = self.model.get_sentence_embedding_dimension()
+/home/philip/uni/hpml/proj/src/../src/../src/embedder.py:66: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  self.embedding_dim = self.model.get_sentence_embedding_dimension()
+2026-04-29 11:10:51,159 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 11:10:51,159 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Initializing Retriever...
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Initializing Retriever...
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Initializing FAISS index: IndexFlatIP
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Initializing FAISS index: IndexFlatIP
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Embedding dimension: 384
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Device: cuda
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Device: cuda
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Retriever initialized. Index is trained: False
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Retriever initialized. Index is trained: False
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Initializing Generator...
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Initializing Generator...
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Initializing Generator with model: Qwen/Qwen2-0.5B-Instruct
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Initializing Generator with model: Qwen/Qwen2-0.5B-Instruct
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Max model length: 4096
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Max model length: 4096
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - GPU memory utilization: 0.8
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - GPU memory utilization: 0.8
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - KV cache reuse: False
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - KV cache reuse: False
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Batch size: 1
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Quantization: None
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Quantization: None
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Tiered KV cache: False
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - Tiered KV cache: False
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - GPU: NVIDIA GeForce RTX 4060 Laptop GPU (7.6 GB)
+2026-04-29 11:10:51,287 - rag_pipeline - INFO - GPU: NVIDIA GeForce RTX 4060 Laptop GPU (7.6 GB)
+2026-04-29 11:10:52,634 - rag_pipeline - INFO - Initializing vLLM engine...
+2026-04-29 11:10:52,634 - rag_pipeline - INFO - Initializing vLLM engine...
+(EngineCore pid=2339972) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=2339972) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=2339972) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  9.95it/s]
+(EngineCore pid=2339972) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  9.95it/s]
+(EngineCore pid=2339972) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  9.93it/s]
+(EngineCore pid=2339972) 
+(EngineCore pid=2339972) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  9.93it/s]
+(EngineCore pid=2339972) 
+2026-04-29 11:11:02,482 - rag_pipeline - INFO - vLLM engine initialized successfully
+2026-04-29 11:11:02,482 - rag_pipeline - INFO - vLLM engine initialized successfully
+2026-04-29 11:11:02,482 - rag_pipeline - INFO - Loading 139 documents from /home/philip/uni/hpml/proj/src/../data/stm32l4-corpus.jsonl
+2026-04-29 11:11:02,482 - rag_pipeline - INFO - Loading 139 documents from /home/philip/uni/hpml/proj/src/../data/stm32l4-corpus.jsonl
+2026-04-29 11:11:02,482 - rag_pipeline - INFO - Adding 139 documents to index
+2026-04-29 11:11:02,482 - rag_pipeline - INFO - Adding 139 documents to index
+2026-04-29 11:11:02,698 - rag_pipeline - INFO - Added 139 documents to index
+2026-04-29 11:11:02,699 - rag_pipeline - INFO - Indexed 139 documents
+2026-04-29 11:11:02,698 - rag_pipeline - INFO - Added 139 documents to index
+2026-04-29 11:11:02,699 - rag_pipeline - INFO - Indexed 139 documents
+2026-04-29 11:11:02,699 - rag_pipeline - INFO - Pipeline initialized successfully
+2026-04-29 11:11:02,699 - rag_pipeline - INFO - Pipeline initialized successfully
+[rank0]:[W429 11:11:02.186717177 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank0]:[W429 11:11:02.186717177 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
