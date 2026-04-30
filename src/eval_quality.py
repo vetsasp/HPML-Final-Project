@@ -11,6 +11,7 @@ import gc
 import json
 import logging
 import os
+import re
 import sys
 from dataclasses import dataclass
 from typing import Dict, List
@@ -29,6 +30,101 @@ except ImportError:
     from pipeline import Pipeline
 
 logger = logging.getLogger("rag_eval")
+
+
+@dataclass
+class EvalResult:
+    """Quality evaluation result for one pipeline configuration."""
+
+    config: str
+    avg_rouge_l: float
+    per_query_scores: List[float]
+
+
+def normalize_text(text: str) -> List[str]:
+    """Normalize text into lowercase word tokens for ROUGE-L."""
+    cleaned = re.sub(r"\s+", " ", text.strip().lower())
+    return re.findall(r"\w+", cleaned)
+
+
+def lcs_length(a: List[str], b: List[str]) -> int:
+    """Compute longest common subsequence length."""
+    if not a or not b:
+        return 0
+
+    prev = [0] * (len(b) + 1)
+    for token_a in a:
+        curr = [0]
+        for j, token_b in enumerate(b, start=1):
+            if token_a == token_b:
+                curr.append(prev[j - 1] + 1)
+            else:
+                curr.append(max(curr[-1], prev[j]))
+        prev = curr
+    return prev[-1]
+
+
+def rouge_l_f1(candidate: str, reference: str) -> float:
+    """Compute ROUGE-L F1 from candidate/reference strings."""
+    cand_tokens = normalize_text(candidate)
+    ref_tokens = normalize_text(reference)
+    if not cand_tokens or not ref_tokens:
+        return 0.0
+
+    lcs = lcs_length(cand_tokens, ref_tokens)
+    precision = lcs / len(cand_tokens)
+    recall = lcs / len(ref_tokens)
+    if precision + recall == 0:
+        return 0.0
+    return (2 * precision * recall) / (precision + recall)
+
+
+def evaluate_config(
+    pipeline: Pipeline, eval_pairs: List[Dict[str, str]], config_name: str
+) -> EvalResult:
+    """Run one pipeline configuration against the fixed evaluation queries."""
+    scores = []
+    for pair in eval_pairs:
+        result = pipeline.query(pair["query"])
+        score = rouge_l_f1(result.answer, pair["reference"])
+        scores.append(score)
+
+    avg_score = sum(scores) / len(scores) if scores else 0.0
+    return EvalResult(
+        config=config_name,
+        avg_rouge_l=avg_score,
+        per_query_scores=scores,
+    )
+
+
+def print_quality_table(results: List[EvalResult]) -> None:
+    """Print a compact ROUGE-L comparison table."""
+    print("\n" + "=" * 72)
+    print("QUALITY EVALUATION (ROUGE-L)")
+    print("=" * 72)
+    print(f"{'Config':<20} | {'Avg ROUGE-L':<12} | {'Per-query scores'}")
+    print("-" * 72)
+    for result in results:
+        per_query = ", ".join(f"{score:.3f}" for score in result.per_query_scores)
+        print(f"{result.config:<20} | {result.avg_rouge_l:<12.4f} | {per_query}")
+    print("=" * 72)
+
+
+def save_quality_results(
+    results: List[EvalResult], output_path: str = "quality_results.json"
+) -> None:
+    """Save quality results in the plotting script's expected JSON format."""
+    payload = [
+        {
+            "config": result.config,
+            "avg_rouge_l": result.avg_rouge_l,
+            "per_query_scores": result.per_query_scores,
+        }
+        for result in results
+    ]
+    with open(output_path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+    logger.info(f"Saved quality results to {output_path}")
 
 
 # Reference answers written for the 5 benchmark queries.
@@ -112,7 +208,8 @@ def main():
         pipeline.generator.engine = None
         del pipeline
         gc.collect()
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         import time
 
         time.sleep(3)

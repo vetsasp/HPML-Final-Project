@@ -29,3 +29,9 @@ models/
 
 # Claude Code internals
 .claude/
+
+# Do not track results from local runs, real results are in hpc_run
+plots/
+
+# ignore extra script I created for additional chart generation
+plot_latency_no_quant.py

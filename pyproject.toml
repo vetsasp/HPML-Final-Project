@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "faiss-cpu>=1.13.2",
+    "matplotlib>=3.10.9",
     "python-dotenv>=1.2.2",
     "sentence-transformers>=5.4.1",
     "torch>=2.0.0",
