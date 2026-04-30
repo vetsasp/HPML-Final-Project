@@ -1,0 +1,83 @@
+{
+  "gpu": "NVIDIA L4",
+  "model": "Qwen/Qwen2-0.5B-Instruct",
+  "results": [
+    {
+      "flags": "baseline",
+      "embed_time_ms": 7.4156324000000495,
+      "retrieve_time_ms": 0.04134180001074128,
+      "generate_time_ms": 987.5918359999956,
+      "total_time_ms": 995.3171096000005,
+      "gpu_memory_gb": 0.09353208541870117,
+      "speedup_pct": 0.0,
+      "ttft_ms": 0.0,
+      "tpot_ms": 0.0
+    },
+    {
+      "flags": "kv",
+      "embed_time_ms": 7.111936600006175,
+      "retrieve_time_ms": 0.041769399979330046,
+      "generate_time_ms": 993.8608534000196,
+      "total_time_ms": 1001.2537513999974,
+      "gpu_memory_gb": 0.17876338958740234,
+      "speedup_pct": -0.5964573242775579,
+      "ttft_ms": 0.0,
+      "tpot_ms": 0.0
+    },
+    {
+      "flags": "tiered",
+      "embed_time_ms": 7.56200699998999,
+      "retrieve_time_ms": 0.03768200000422439,
+      "generate_time_ms": 966.8800413999976,
+      "total_time_ms": 989.1534534000017,
+      "gpu_memory_gb": 0.17815303802490234,
+      "speedup_pct": 0.6192655728058281,
+      "ttft_ms": 0.0,
+      "tpot_ms": 0.0
+    },
+    {
+      "flags": "kv+tiered",
+      "embed_time_ms": 7.2110964000103195,
+      "retrieve_time_ms": 0.03939300000865842,
+      "generate_time_ms": 973.3679592000044,
+      "total_time_ms": 989.5567369999981,
+      "gpu_memory_gb": 0.2633843421936035,
+      "speedup_pct": 0.5787474709761063,
+      "ttft_ms": 0.0,
+      "tpot_ms": 0.0
+    },
+    {
+      "flags": "overlap",
+      "embed_time_ms": 3.3784140000079788,
+      "retrieve_time_ms": 0.05060760000787923,
+      "generate_time_ms": 950.2763851999819,
+      "total_time_ms": 954.0527973999928,
+      "gpu_memory_gb": 0.3480052947998047,
+      "speedup_pct": 4.145845761316326,
+      "ttft_ms": 0.0,
+      "tpot_ms": 0.0
+    },
+    {
+      "flags": "q=fp8",
+      "embed_time_ms": 7.08826779998617,
+      "retrieve_time_ms": 0.0384942000096089,
+      "generate_time_ms": 10545.463418399993,
+      "total_time_ms": 10552.816470000005,
+      "gpu_memory_gb": 0.2627739906311035,
+      "speedup_pct": -960.2466659335321,
+      "ttft_ms": 0.0,
+      "tpot_ms": 0.0
+    },
+    {
+      "flags": "kv+q=fp8",
+      "embed_time_ms": 7.014335600024424,
+      "retrieve_time_ms": 0.04550820001441025,
+      "generate_time_ms": 10861.953319400003,
+      "total_time_ms": 10869.231029000002,
+      "gpu_memory_gb": 0.3480052947998047,
+      "speedup_pct": -992.0369924483809,
+      "ttft_ms": 0.0,
+      "tpot_ms": 0.0
+    }
+  ]
+}
